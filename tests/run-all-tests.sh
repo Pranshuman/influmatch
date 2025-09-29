@@ -115,6 +115,12 @@ run_integration_tests() {
         ((integration_tests_passed++))
     fi
     
+    # Button Functionality Tests
+    ((integration_tests_total++))
+    if run_test_suite "Button Functionality Tests" "$(dirname "$0")/integration/button-functionality.sh" "Test all button functionality and navigation across frontend pages"; then
+        ((integration_tests_passed++))
+    fi
+    
     echo -e "${BLUE}Integration Tests Summary: $integration_tests_passed/$integration_tests_total passed${NC}"
     return $((integration_tests_total - integration_tests_passed))
 }
