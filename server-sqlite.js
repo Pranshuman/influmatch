@@ -41,7 +41,7 @@ import express from 'express'
 import cors from 'cors'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { connectToDatabase, getDatabase, dbHelpers } from './database-sqlite.js'
+import { connectToDatabase, getDatabase, dbHelpers } from './database.js'
 
 const app = express()
 app.use(express.json())

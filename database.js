@@ -1,33 +1,37 @@
-// database-sqlite.js
-// Database connection and helper functions for Influmatch
-// Supports both SQLite (development) and PostgreSQL (production)
+// database.js
+// Universal database connection for Influmatch (SQLite + PostgreSQL support)
 
 import sqlite3 from 'sqlite3'
 import { open } from 'sqlite'
 import bcrypt from 'bcryptjs'
 
 let db = null
+let isPostgreSQL = false
 
-// Connect to database (SQLite for development, PostgreSQL for production)
+// Connect to database
 export async function connectToDatabase() {
   try {
     // Check if we're using PostgreSQL (production) or SQLite (development)
     if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgresql://')) {
-      // For production with PostgreSQL, we'll use a simple connection
-      // Note: In a real production setup, you'd want to use a proper PostgreSQL client
       console.log('Production mode: Using PostgreSQL database')
-      // For now, we'll create a mock database object that works with our existing code
+      isPostgreSQL = true
+      
+      // For now, create a simple mock that works with our existing code
+      // In a real production setup, you'd use the 'pg' package
       db = {
         run: async (query, params = []) => {
           console.log('PostgreSQL query:', query, params)
+          // Mock response for development
           return { lastID: Math.floor(Math.random() * 1000) }
         },
         get: async (query, params = []) => {
           console.log('PostgreSQL query:', query, params)
+          // Mock response for development
           return null
         },
         all: async (query, params = []) => {
           console.log('PostgreSQL query:', query, params)
+          // Mock response for development
           return []
         },
         exec: async (query) => {
@@ -36,15 +40,16 @@ export async function connectToDatabase() {
         }
       }
     } else {
-      // Development mode: Use SQLite
       console.log('Development mode: Using SQLite database')
+      isPostgreSQL = false
+      
       db = await open({
         filename: process.env.DATABASE_URL || './influmatch.db',
         driver: sqlite3.Database
       })
     }
     
-    console.log('Connected to SQLite database')
+    console.log('Connected to database')
     
     // Initialize database tables
     await initializeTables()
@@ -67,70 +72,80 @@ export function getDatabase() {
 // Initialize database tables
 async function initializeTables() {
   try {
-    // Users table
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
-        userType TEXT NOT NULL CHECK (userType IN ('brand', 'influencer')),
-        bio TEXT,
-        website TEXT,
-        socialMedia TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
+    if (isPostgreSQL) {
+      // PostgreSQL table creation (for production)
+      console.log('Initializing PostgreSQL tables...')
+      // Note: In real production, you'd create proper PostgreSQL tables here
+      return
+    } else {
+      // SQLite table creation (for development)
+      console.log('Initializing SQLite tables...')
+      
+      // Users table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          userType TEXT NOT NULL CHECK (userType IN ('brand', 'influencer')),
+          bio TEXT,
+          website TEXT,
+          socialMedia TEXT,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
 
-    // Listings table (campaigns)
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS listings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        brandId INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        category TEXT,
-        budget INTEGER,
-        deadline TEXT,
-        requirements TEXT,
-        deliverables TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (brandId) REFERENCES users (id)
-      )
-    `)
+      // Listings table (campaigns)
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS listings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          brandId INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          category TEXT,
+          budget INTEGER,
+          deadline TEXT,
+          requirements TEXT,
+          deliverables TEXT,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (brandId) REFERENCES users (id)
+        )
+      `)
 
-    // Proposals table
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS proposals (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        listingId INTEGER NOT NULL,
-        influencerId INTEGER NOT NULL,
-        message TEXT NOT NULL,
-        proposedBudget INTEGER,
-        timeline TEXT,
-        status TEXT DEFAULT 'under_review' CHECK (status IN ('under_review', 'accepted', 'rejected', 'withdrawn')),
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (listingId) REFERENCES listings (id),
-        FOREIGN KEY (influencerId) REFERENCES users (id)
-      )
-    `)
+      // Proposals table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS proposals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          listingId INTEGER NOT NULL,
+          influencerId INTEGER NOT NULL,
+          message TEXT NOT NULL,
+          proposedBudget INTEGER,
+          timeline TEXT,
+          status TEXT DEFAULT 'under_review' CHECK (status IN ('under_review', 'accepted', 'rejected', 'withdrawn')),
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (listingId) REFERENCES listings (id),
+          FOREIGN KEY (influencerId) REFERENCES users (id)
+        )
+      `)
 
-    // Messages table
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        conversationId TEXT NOT NULL,
-        senderId INTEGER NOT NULL,
-        recipientId INTEGER NOT NULL,
-        content TEXT NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (senderId) REFERENCES users (id),
-        FOREIGN KEY (recipientId) REFERENCES users (id)
-      )
-    `)
+      // Messages table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          conversationId TEXT NOT NULL,
+          senderId INTEGER NOT NULL,
+          recipientId INTEGER NOT NULL,
+          content TEXT NOT NULL,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (senderId) REFERENCES users (id),
+          FOREIGN KEY (recipientId) REFERENCES users (id)
+        )
+      `)
+    }
 
     console.log('Database tables initialized successfully')
   } catch (error) {
