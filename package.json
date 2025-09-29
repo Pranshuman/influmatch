@@ -1,0 +1,39 @@
+{
+  "name": "influmatch-ig-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js",
+    "dev:mongodb": "nodemon server-mongodb.js",
+    "dev:sqlite": "nodemon server-sqlite.js",
+    "start:mongodb": "node start-mongodb.js",
+    "setup:mongodb": "node setup-mongodb-atlas.js",
+    "browse:cli": "./browse-db.sh",
+    "browse:web": "node sqlite-web-browser.js",
+    "browse:node": "node sqlite-browser.js",
+    "test:jwt": "node test-jwt.js",
+    "test:user-state": "node test-user-state.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "type": "module"
+}
+
+
+
