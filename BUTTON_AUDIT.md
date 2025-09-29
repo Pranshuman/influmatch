@@ -106,3 +106,4 @@ All buttons should:
 - ✅ Handle errors gracefully
 - ✅ Have proper accessibility attributes
 - ✅ Work consistently across all pages
+
