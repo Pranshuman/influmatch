@@ -1,8 +1,9 @@
 {
   "name": "influmatch-ig-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server-sqlite.js",
   "scripts": {
+    "start": "node server-sqlite.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
     "dev:mongodb": "nodemon server-mongodb.js",
