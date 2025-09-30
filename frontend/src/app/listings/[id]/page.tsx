@@ -143,15 +143,6 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
 
   const canSubmitProposal = isAuthenticated && user?.userType === 'influencer' && (listing.status === 'active' || listing.status === null || listing.status === undefined)
   const isBrandOwner = isAuthenticated && user?.userType === 'brand' && user?.id === Number(listing.brandId)
-  
-  // Debug logging
-  console.log('🔍 DEBUG - Proposal Submission Check:', {
-    isAuthenticated,
-    userType: user?.userType,
-    listingStatus: listing.status,
-    canSubmitProposal,
-    isBrandOwner
-  })
 
   return (
     <div className="min-h-screen bg-gray-50">
