@@ -168,8 +168,9 @@ app.post('/auth/register', async (req, res) => {
     const createdUsers = await safeSupabaseQuery('users', 'insert', [newUser]);
     console.log('[REGISTER] User created:', createdUsers);
     
-    if (!createdUsers || createdUsers.length === 0) {
+    if (!createdUsers || !Array.isArray(createdUsers) || createdUsers.length === 0) {
       console.error('[REGISTER] ❌ No user returned from database');
+      console.error('[REGISTER] Created users:', createdUsers);
       return res.status(500).json({ error: 'Failed to create user' });
     }
     

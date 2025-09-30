@@ -110,10 +110,12 @@ export async function safeSupabaseQuery(table, operation, data = null, filters =
     }
     
     if (result.error) {
+      console.error(`[Supabase] Query error:`, result.error);
       throw new Error(result.error.message);
     }
     
-    return result.data;
+    console.log(`[Supabase] Query result:`, result);
+    return result.data || [];
   } catch (error) {
     console.error(`[Supabase] Query error (${operation} on ${table}):`, error.message);
     throw error;
