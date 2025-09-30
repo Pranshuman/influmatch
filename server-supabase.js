@@ -50,8 +50,46 @@ app.get("/healthz", (_req, res) => {
   res.status(200).json({ 
     status: "ok", 
     timestamp: new Date().toISOString(),
-    database: "supabase-http"
+    database: "supabase-http",
+    supabaseClient: supabaseClient ? "connected" : "disconnected"
   });
+});
+
+// Debug endpoint to check Supabase connection
+app.get("/debug/supabase", async (_req, res) => {
+  try {
+    if (!supabaseClient) {
+      return res.status(503).json({ 
+        error: "Supabase client not initialized",
+        environment: {
+          DATABASE_URL: process.env.DATABASE_URL ? "Set" : "Not set",
+          SUPABASE_URL: process.env.SUPABASE_URL ? "Set" : "Not set",
+          SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? "Set" : "Not set"
+        }
+      });
+    }
+
+    // Test a simple query
+    const result = await safeSupabaseQuery('users', 'select', null, {});
+    
+    res.json({
+      status: "connected",
+      supabaseClient: "initialized",
+      testQuery: "successful",
+      userCount: result ? result.length : 0,
+      environment: {
+        DATABASE_URL: process.env.DATABASE_URL ? "Set" : "Not set",
+        SUPABASE_URL: process.env.SUPABASE_URL ? "Set" : "Not set",
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? "Set" : "Not set"
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Supabase connection test failed",
+      message: error.message,
+      stack: error.stack
+    });
+  }
 });
 
 // JWT Secret
