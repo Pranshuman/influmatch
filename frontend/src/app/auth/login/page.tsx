@@ -27,7 +27,7 @@ export default function Login() {
       } else {
         setError('Invalid email or password')
       }
-    } catch (err) {
+        } catch {
       setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
@@ -103,7 +103,7 @@ export default function Login() {
 
           <div className="text-center">
             <a href="/auth/register" className="text-blue-600 hover:text-blue-500">
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </a>
           </div>
         </form>
