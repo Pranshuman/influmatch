@@ -274,7 +274,7 @@ app.get('/health', (_req, res) => res.json({
 // ---- API Info ----
 app.get('/', (_req, res) => res.json({
   name: 'Influmatch API',
-  version: '1.0.0',
+  version: '1.0.1',
   description: 'Influencer Marketplace Platform',
   endpoints: {
     auth: ['POST /auth/register', 'POST /auth/login'],
