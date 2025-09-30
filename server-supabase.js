@@ -20,7 +20,28 @@ import { getSupabaseClient, safeSupabaseQuery, initializeSupabaseTables } from '
 const app = express()
 app.use(express.json())
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    if (origin.includes('localhost')) return callback(null, true);
+    
+    // Allow all Vercel domains
+    if (origin.includes('vercel.app')) return callback(null, true);
+    
+    // Allow custom domain if set
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+      return callback(null, true);
+    }
+    
+    // Allow the specific Vercel domain
+    if (origin === 'https://frontend-sage-theta.vercel.app') {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }))
 
