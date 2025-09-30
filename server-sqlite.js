@@ -41,7 +41,7 @@ import express from 'express'
 import cors from 'cors'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { connectToDatabase, getDatabase, dbHelpers } from './database-mock.js'
+import { createDbPool, safeQuery, safeTransaction } from './db.js'
 
 const app = express()
 app.use(express.json())
@@ -50,13 +50,103 @@ app.use(cors({
   credentials: true
 }))
 
+// Health endpoint (used by Railway)
+app.get("/healthz", (_req, res) => {
+  res.status(200).json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    database: dbPool ? "connected" : "disconnected"
+  });
+});
+
 // JWT Secret (in production, use a secure random string)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 // Database instance (will be initialized after connection)
 let db = null
+let dbPool = null
 
 // ---- Helper Functions ----
+
+// Initialize database tables
+async function initializeTables() {
+  if (!dbPool) {
+    console.log("[DB] No database pool available, skipping table initialization");
+    return;
+  }
+
+  try {
+    console.log("[DB] Initializing PostgreSQL tables...");
+    
+    // Users table
+    await safeQuery(dbPool, `
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        "userType" VARCHAR(20) NOT NULL CHECK ("userType" IN ('brand', 'influencer')),
+        bio TEXT,
+        website VARCHAR(255),
+        "socialMedia" TEXT,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Listings table
+    await safeQuery(dbPool, `
+      CREATE TABLE IF NOT EXISTS listings (
+        id SERIAL PRIMARY KEY,
+        "brandId" INTEGER NOT NULL REFERENCES users(id),
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        category VARCHAR(100),
+        budget INTEGER,
+        deadline VARCHAR(100),
+        requirements TEXT,
+        deliverables TEXT,
+        status VARCHAR(20) DEFAULT 'active',
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Proposals table
+    await safeQuery(dbPool, `
+      CREATE TABLE IF NOT EXISTS proposals (
+        id SERIAL PRIMARY KEY,
+        "listingId" INTEGER NOT NULL REFERENCES listings(id),
+        "influencerId" INTEGER NOT NULL REFERENCES users(id),
+        message TEXT NOT NULL,
+        "proposedBudget" INTEGER,
+        status VARCHAR(20) DEFAULT 'under_review',
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Messages table
+    await safeQuery(dbPool, `
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        "senderId" INTEGER NOT NULL REFERENCES users(id),
+        "receiverId" INTEGER NOT NULL REFERENCES users(id),
+        "listingId" INTEGER REFERENCES listings(id),
+        "proposalId" INTEGER REFERENCES proposals(id),
+        content TEXT NOT NULL,
+        "isRead" BOOLEAN DEFAULT FALSE,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    console.log("[DB] ✅ PostgreSQL tables initialized successfully!");
+  } catch (error) {
+    console.error("[DB] ❌ Error initializing tables:", error.message);
+    throw error;
+  }
+}
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
@@ -94,12 +184,17 @@ app.get('/', (_req, res) => {
 app.get('/health', (_req, res) => res.json({ 
   ok: true, 
   timestamp: new Date().toISOString(),
-  database: db ? 'connected' : 'disconnected'
+  database: dbPool ? 'connected' : 'disconnected'
 }))
 
 // ---- Authentication Routes ----
 app.post('/auth/register', async (req, res) => {
   try {
+    // Check if database is available
+    if (!dbPool) {
+      return res.status(503).json({ error: 'Database unavailable, please retry shortly.' });
+    }
+
     const { name, email, password, userType, bio, website, socialMedia } = req.body
 
     // Validate required fields
@@ -108,27 +203,36 @@ app.post('/auth/register', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await dbHelpers.getUserByEmail(email)
-    if (existingUser) {
+    const existingUserResult = await safeQuery(dbPool, 
+      'SELECT * FROM users WHERE email = $1', 
+      [email]
+    );
+    
+    if (existingUserResult.rows.length > 0) {
       return res.status(400).json({ error: 'User already exists' })
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create user
-    const userId = await dbHelpers.createUser({
-      name,
-      email,
-      password,
-      userType,
-      bio: bio || '',
-      website: website || '',
-      socialMedia: socialMedia || {}
-    })
+    // Create user using transaction
+    const result = await safeTransaction(dbPool, async (client) => {
+      const insertResult = await client.query(
+        `INSERT INTO users (name, email, password_hash, "userType", bio, website, "socialMedia")
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [name, email, hashedPassword, userType, bio || null, website || null, socialMedia || null]
+      );
+      return insertResult.rows[0].id;
+    });
+
+    const userId = result;
 
     // Get the created user
-    const user = await dbHelpers.getUserById(userId)
+    const userResult = await safeQuery(dbPool, 
+      'SELECT * FROM users WHERE id = $1', 
+      [userId]
+    );
+    const user = userResult.rows[0];
 
     // Generate JWT token
     const token = jwt.sign(
@@ -674,9 +778,18 @@ async function startServer() {
     console.log(`   - PORT: ${process.env.PORT || '5050'}`)
     console.log(`   - JWT_SECRET: ${process.env.JWT_SECRET ? 'Set' : 'Using default'}`)
 
-    // Connect to SQLite database
-    await connectToDatabase()
-    db = getDatabase()
+    // Initialize DB with retry but DO NOT crash the process if it fails.
+    try {
+      dbPool = await createDbPool();
+      console.log("[DB] ✅ Connected successfully");
+      
+      // Initialize tables if needed
+      await initializeTables();
+      console.log("[DB] ✅ Tables initialized");
+    } catch (err) {
+      console.error("[DB] ❌ Failed to connect after retries. Server will still run. Routes should handle dbPool=null.");
+      console.error("[DB] Error details:", err.message);
+    }
 
     const PORT = process.env.PORT || 5050
 
