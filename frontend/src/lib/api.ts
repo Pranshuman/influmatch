@@ -1,5 +1,5 @@
 // API service for Influmatch marketplace
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://influmatch-production.up.railway.app'
+const API_BASE_URL = 'https://influmatch-production.up.railway.app'
 
 export interface User {
   id: number
