@@ -81,3 +81,4 @@ Once your GitHub repository is updated:
 ---
 
 **Choose the method that works best for you!** GitHub Desktop is usually the easiest for non-technical users.
+

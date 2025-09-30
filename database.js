@@ -329,3 +329,4 @@ export const dbHelpers = {
 }
 
 export default { connectToDatabase, getDatabase, dbHelpers }
+
