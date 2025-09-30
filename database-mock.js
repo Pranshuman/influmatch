@@ -4,38 +4,80 @@
 import sqlite3 from 'sqlite3'
 import { open } from 'sqlite'
 import bcrypt from 'bcryptjs'
+import pg from 'pg'
 
 let db = null
 let isPostgreSQL = false
+let pgClient = null
 
 // Connect to database
 export async function connectToDatabase() {
   try {
     // Check if we're using PostgreSQL (production) or SQLite (development)
     if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgresql://')) {
-      console.log('Production mode: Using MOCK PostgreSQL database')
+      console.log('Production mode: Using REAL PostgreSQL database')
       isPostgreSQL = true
       
-      // Use mock connection for now
+      // Create real PostgreSQL connection with proper SSL configuration
+      pgClient = new pg.Client({
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+          rejectUnauthorized: false,
+          require: true
+        },
+        connectionTimeoutMillis: 10000,
+        idleTimeoutMillis: 30000
+      })
+      
+      console.log('Connecting to PostgreSQL database...')
+      await pgClient.connect()
+      console.log('✅ Connected to PostgreSQL database successfully!')
+      
+      // Wrap pgClient methods to match sqlite's interface
       db = {
         run: async (query, params = []) => {
-          console.log('Mock PostgreSQL run query:', query, params)
-          // Return a mock successful response
-          return { lastID: Math.floor(Math.random() * 1000) + 1 }
+          console.log('PostgreSQL run query:', query.substring(0, 100) + '...', params)
+          try {
+            const result = await pgClient.query(query, params)
+            // For INSERT queries, return the inserted ID
+            if (query.toLowerCase().includes('insert')) {
+              return { lastID: result.rows[0]?.id || Math.floor(Math.random() * 1000) + 1 }
+            }
+            return { lastID: result.rows[0]?.id || 1 }
+          } catch (error) {
+            console.error('PostgreSQL run error:', error.message)
+            throw error
+          }
         },
         get: async (query, params = []) => {
-          console.log('Mock PostgreSQL get query:', query, params)
-          // Return null for now (no existing users)
-          return null
+          console.log('PostgreSQL get query:', query.substring(0, 100) + '...', params)
+          try {
+            const result = await pgClient.query(query, params)
+            return result.rows[0] || null
+          } catch (error) {
+            console.error('PostgreSQL get error:', error.message)
+            throw error
+          }
         },
         all: async (query, params = []) => {
-          console.log('Mock PostgreSQL all query:', query, params)
-          // Return empty array for now
-          return []
+          console.log('PostgreSQL all query:', query.substring(0, 100) + '...', params)
+          try {
+            const result = await pgClient.query(query, params)
+            return result.rows
+          } catch (error) {
+            console.error('PostgreSQL all error:', error.message)
+            throw error
+          }
         },
         exec: async (query) => {
-          console.log('Mock PostgreSQL exec:', query)
-          return true
+          console.log('PostgreSQL exec:', query.substring(0, 100) + '...')
+          try {
+            await pgClient.query(query)
+            return true
+          } catch (error) {
+            console.error('PostgreSQL exec error:', error.message)
+            throw error
+          }
         }
       }
     } else {
@@ -72,8 +114,71 @@ export function getDatabase() {
 async function initializeTables() {
   try {
     if (isPostgreSQL) {
-      console.log('Using mock PostgreSQL tables')
-      // Skip table creation for mock
+      console.log('Initializing PostgreSQL tables...')
+      
+      // Users table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
+          "userType" VARCHAR(20) NOT NULL CHECK ("userType" IN ('brand', 'influencer')),
+          bio TEXT,
+          website VARCHAR(255),
+          "socialMedia" TEXT,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+
+      // Listings table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS listings (
+          id SERIAL PRIMARY KEY,
+          "brandId" INTEGER NOT NULL REFERENCES users(id),
+          title VARCHAR(255) NOT NULL,
+          description TEXT NOT NULL,
+          category VARCHAR(100),
+          budget INTEGER,
+          deadline VARCHAR(100),
+          requirements TEXT,
+          deliverables TEXT,
+          status VARCHAR(20) DEFAULT 'active',
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+
+      // Proposals table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS proposals (
+          id SERIAL PRIMARY KEY,
+          "listingId" INTEGER NOT NULL REFERENCES listings(id),
+          "influencerId" INTEGER NOT NULL REFERENCES users(id),
+          message TEXT NOT NULL,
+          "proposedBudget" INTEGER,
+          status VARCHAR(20) DEFAULT 'under_review',
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+
+      // Messages table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id SERIAL PRIMARY KEY,
+          "senderId" INTEGER NOT NULL REFERENCES users(id),
+          "receiverId" INTEGER NOT NULL REFERENCES users(id),
+          "listingId" INTEGER REFERENCES listings(id),
+          "proposalId" INTEGER REFERENCES proposals(id),
+          content TEXT NOT NULL,
+          "isRead" BOOLEAN DEFAULT FALSE,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      
+      console.log('✅ PostgreSQL tables initialized successfully!')
     } else {
       console.log('Initializing SQLite tables...')
       
@@ -160,35 +265,63 @@ export const dbHelpers = {
     
     console.log('Creating user:', { name, email, userType })
     
-    const result = await db.run(
-      `INSERT INTO users (name, email, password_hash, userType, bio, website, socialMedia)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, email, passwordHash, userType, bio || null, website || null, socialMedia || null]
-    )
-    
-    console.log('User created with ID:', result.lastID)
-    return result.lastID
+    if (isPostgreSQL) {
+      const result = await db.run(
+        `INSERT INTO users (name, email, password_hash, "userType", bio, website, "socialMedia")
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [name, email, passwordHash, userType, bio || null, website || null, socialMedia || null]
+      )
+      console.log('User created with ID:', result.lastID)
+      return result.lastID
+    } else {
+      const result = await db.run(
+        `INSERT INTO users (name, email, password_hash, userType, bio, website, socialMedia)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [name, email, passwordHash, userType, bio || null, website || null, socialMedia || null]
+      )
+      console.log('User created with ID:', result.lastID)
+      return result.lastID
+    }
   },
 
   async getUserByEmail(email) {
-    const user = await db.get('SELECT * FROM users WHERE email = ?', [email])
-    return user
+    if (isPostgreSQL) {
+      const user = await db.get('SELECT * FROM users WHERE email = $1', [email])
+      return user
+    } else {
+      const user = await db.get('SELECT * FROM users WHERE email = ?', [email])
+      return user
+    }
   },
 
   async getUserById(id) {
-    const user = await db.get('SELECT * FROM users WHERE id = ?', [id])
-    return user
+    if (isPostgreSQL) {
+      const user = await db.get('SELECT * FROM users WHERE id = $1', [id])
+      return user
+    } else {
+      const user = await db.get('SELECT * FROM users WHERE id = ?', [id])
+      return user
+    }
   },
 
   async updateUser(id, userData) {
     const { name, bio, website, socialMedia } = userData
     
-    await db.run(
-      `UPDATE users 
-       SET name = ?, bio = ?, website = ?, socialMedia = ?, updatedAt = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [name, bio, website, socialMedia, id]
-    )
+    if (isPostgreSQL) {
+      await db.run(
+        `UPDATE users 
+         SET name = $1, bio = $2, website = $3, "socialMedia" = $4, "updatedAt" = CURRENT_TIMESTAMP
+         WHERE id = $5`,
+        [name, bio, website, socialMedia, id]
+      )
+    } else {
+      await db.run(
+        `UPDATE users 
+         SET name = ?, bio = ?, website = ?, socialMedia = ?, updatedAt = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [name, bio, website, socialMedia, id]
+      )
+    }
     
     return true
   },
