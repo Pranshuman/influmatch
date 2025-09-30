@@ -61,7 +61,8 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
 
   const fetchListing = async () => {
     try {
-      const response = await fetch(`https://influmatch-production.up.railway.app/api/listings/${resolvedParams.id}`)
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
+      const response = await fetch(`${API_BASE_URL}/api/listings/${resolvedParams.id}`)
       if (response.ok) {
         const data = await response.json()
         setListing(data.listing)
@@ -82,7 +83,8 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
       console.log('🔍 Fetching proposals for listing:', resolvedParams.id)
       console.log('👤 Current user:', user ? `${user.name} (ID: ${user.id}, Type: ${user.userType})` : 'Not logged in')
       
-      const response = await fetch(`https://influmatch-production.up.railway.app/api/listings/${resolvedParams.id}/proposals`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
+      const response = await fetch(`${API_BASE_URL}/api/listings/${resolvedParams.id}/proposals`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -113,7 +115,8 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
     setSubmittingProposal(true)
     try {
       const token = localStorage.getItem('auth_token')
-      const response = await fetch(`https://influmatch-production.up.railway.app/api/listings/${resolvedParams.id}/proposals`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
+      const response = await fetch(`${API_BASE_URL}/api/listings/${resolvedParams.id}/proposals`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +174,7 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
   }
 
   const canSubmitProposal = isAuthenticated && user?.userType === 'influencer' && listing.status === 'active'
-  const isBrandOwner = isAuthenticated && user?.userType === 'brand' && user?.id === listing.brandId
+  const isBrandOwner = isAuthenticated && user?.userType === 'brand' && user?.id === Number(listing.brandId)
 
   return (
     <div className="min-h-screen bg-gray-50">

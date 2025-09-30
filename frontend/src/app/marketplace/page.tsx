@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { useApi } from '@/hooks/useApi'
-import { Listing } from '@/lib/api'
+import { Listing, marketplaceAPI } from '@/lib/api'
 
 export default function Marketplace() {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
   const { data, loading, error } = useApi<{ listings: Listing[] }>(
-    'https://influmatch-production.up.railway.app/api/listings',
+    `${API_BASE_URL}/api/listings`,
     { timeoutMs: 15000, cache: 'no-store' }
   )
 

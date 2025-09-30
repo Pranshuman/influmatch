@@ -53,7 +53,8 @@ export default function Messages() {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('https://influmatch-production.up.railway.app/api/messages', {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
+      const response = await fetch(`${API_BASE_URL}/api/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -75,7 +76,8 @@ export default function Messages() {
   const fetchMessages = async (conversationId: string) => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`https://influmatch-production.up.railway.app/api/messages/${conversationId}`, {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
+      const response = await fetch(`${API_BASE_URL}/api/messages/${conversationId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,7 +102,8 @@ export default function Messages() {
       const conversation = conversations.find(c => c.id === selectedConversation)
       const otherParticipant = conversation?.participants.find(p => p !== user?.id)
       
-      const response = await fetch('https://influmatch-production.up.railway.app/api/messages', {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
+      const response = await fetch(`${API_BASE_URL}/api/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
