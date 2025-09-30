@@ -1,9 +1,9 @@
 {
   "name": "influmatch-ig-backend",
   "version": "1.0.0",
-  "main": "server-sqlite.js",
+  "main": "server-supabase.js",
   "scripts": {
-    "start": "node server-sqlite.js",
+    "start": "node server-supabase.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
     "dev:mongodb": "nodemon server-mongodb.js",
@@ -21,6 +21,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@supabase/supabase-js": "^2.58.0",
     "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -36,6 +37,3 @@
   },
   "type": "module"
 }
-
-
-
