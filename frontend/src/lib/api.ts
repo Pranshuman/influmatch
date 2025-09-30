@@ -1,17 +1,18 @@
 // API service for Influmatch marketplace
-// Centralized API base URL with cache busting
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 
+// Centralized API base URL with cache busting - FORCE IMMEDIATE UPDATE
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
   (process.env.NODE_ENV === "production" 
     ? "https://influmatch-production.up.railway.app" 
     : "http://localhost:5050")
 
-// Cache busting for this deployment
-const CACHE_BUST = process.env.NEXT_PUBLIC_APP_BUILD_ID || 'v3.0'
-const API_BASE = `${API_BASE}?v=${CACHE_BUST}`
+// Cache busting for this deployment - FORCE IMMEDIATE UPDATE
+const CACHE_BUST = process.env.NEXT_PUBLIC_APP_BUILD_ID || `v4.0-${Date.now()}`
+const API_BASE = `${API_BASE_URL}?v=${CACHE_BUST}`
 
 // Debug log to confirm correct URL is being used
-console.log('🚀 API_BASE:', API_BASE)
+console.log('🚀 API_BASE_URL:', API_BASE_URL)
 console.log('🚀 API_BASE with cache bust:', API_BASE)
+console.log('🚀 CACHE_BUST:', CACHE_BUST)
 
 export interface User {
   id: number

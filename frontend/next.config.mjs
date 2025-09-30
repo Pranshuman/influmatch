@@ -1,8 +1,8 @@
 import { execSync } from 'child_process';
 
-// Generate unique build ID for cache busting
+// Generate unique build ID for cache busting - FORCE IMMEDIATE UPDATE
 const buildId = process.env.VERCEL_GIT_COMMIT_SHA || 
-  execSync('git rev-parse --short HEAD').toString().trim();
+  `${execSync('git rev-parse --short HEAD').toString().trim()}-${Date.now()}`;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
