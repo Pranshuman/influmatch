@@ -120,7 +120,7 @@ app.post('/auth/register', async (req, res) => {
     const userId = await dbHelpers.createUser({
       name,
       email,
-      password: hashedPassword,
+      password,
       userType,
       bio: bio || '',
       website: website || '',

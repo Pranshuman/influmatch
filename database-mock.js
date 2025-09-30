@@ -158,12 +158,15 @@ export const dbHelpers = {
     
     const passwordHash = await bcrypt.hash(password, 10)
     
+    console.log('Creating user:', { name, email, userType })
+    
     const result = await db.run(
       `INSERT INTO users (name, email, password_hash, userType, bio, website, socialMedia)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [name, email, passwordHash, userType, bio || null, website || null, socialMedia || null]
     )
     
+    console.log('User created with ID:', result.lastID)
     return result.lastID
   },
 
