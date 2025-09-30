@@ -15,6 +15,8 @@ interface AuthContextType {
     userType: 'brand' | 'influencer'
     company?: string
     bio?: string
+    website?: string
+    socialMedia?: string
   }) => Promise<boolean>
   logout: () => void
 }
@@ -100,9 +102,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userType: 'brand' | 'influencer'
     company?: string
     bio?: string
+    website?: string
+    socialMedia?: string
   }): Promise<boolean> => {
     try {
-      const data = await marketplaceAPI.register(userData)
+      // Transform the data to match backend expectations
+      const backendData = {
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        userType: userData.userType,
+        bio: userData.bio || (userData.userType === 'brand' ? userData.company : undefined),
+        website: userData.website,
+        socialMedia: userData.socialMedia
+      }
+      
+      const data = await marketplaceAPI.register(backendData)
       setUser(data.user)
       setIsAuthenticated(true)
       setIsLoading(false)

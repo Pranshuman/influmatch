@@ -86,7 +86,7 @@ export async function safeSupabaseQuery(table, operation, data = null, filters =
         break;
         
       case 'insert':
-        result = await client.from(table).insert(data);
+        result = await client.from(table).insert(data).select();
         break;
         
       case 'update':

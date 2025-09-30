@@ -11,7 +11,9 @@ export default function Register() {
     password: '',
     userType: 'brand' as 'brand' | 'influencer',
     company: '',
-    bio: ''
+    bio: '',
+    website: '',
+    socialMedia: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -156,6 +158,36 @@ export default function Register() {
                 />
               </div>
             )}
+
+            <div>
+              <label htmlFor="website" className="block text-sm font-medium text-gray-700">
+                Website (Optional)
+              </label>
+              <input
+                id="website"
+                name="website"
+                type="url"
+                value={formData.website}
+                onChange={handleChange}
+                placeholder="https://example.com"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="socialMedia" className="block text-sm font-medium text-gray-700">
+                Social Media (Optional)
+              </label>
+              <input
+                id="socialMedia"
+                name="socialMedia"
+                type="text"
+                value={formData.socialMedia}
+                onChange={handleChange}
+                placeholder="@username or profile URL"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
 
           <div>

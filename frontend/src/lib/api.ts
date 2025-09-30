@@ -106,7 +106,9 @@ class MarketplaceAPI {
     password: string
     userType: 'brand' | 'influencer'
     name: string
-    company?: string
+    bio?: string
+    website?: string
+    socialMedia?: string
   }): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
