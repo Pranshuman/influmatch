@@ -4,9 +4,11 @@
 import sqlite3 from 'sqlite3'
 import { open } from 'sqlite'
 import bcrypt from 'bcryptjs'
+import pg from 'pg'
 
 let db = null
 let isPostgreSQL = false
+let pgClient = null
 
 // Connect to database
 export async function connectToDatabase() {
@@ -16,26 +18,37 @@ export async function connectToDatabase() {
       console.log('Production mode: Using PostgreSQL database')
       isPostgreSQL = true
       
-      // For now, create a simple mock that works with our existing code
-      // In a real production setup, you'd use the 'pg' package
+      // Create real PostgreSQL connection
+      pgClient = new pg.Client({
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      })
+      
+      await pgClient.connect()
+      console.log('Connected to PostgreSQL database')
+      
+      // Wrap pgClient methods to match sqlite's interface
       db = {
         run: async (query, params = []) => {
-          console.log('PostgreSQL query:', query, params)
-          // Mock response for development
-          return { lastID: Math.floor(Math.random() * 1000) }
+          console.log('PostgreSQL run query:', query, params)
+          const result = await pgClient.query(query, params)
+          return { lastID: result.rows[0]?.id || Math.floor(Math.random() * 1000) }
         },
         get: async (query, params = []) => {
-          console.log('PostgreSQL query:', query, params)
-          // Mock response for development
-          return null
+          console.log('PostgreSQL get query:', query, params)
+          const result = await pgClient.query(query, params)
+          return result.rows[0] || null
         },
         all: async (query, params = []) => {
-          console.log('PostgreSQL query:', query, params)
-          // Mock response for development
-          return []
+          console.log('PostgreSQL all query:', query, params)
+          const result = await pgClient.query(query, params)
+          return result.rows
         },
         exec: async (query) => {
           console.log('PostgreSQL exec:', query)
+          await pgClient.query(query)
           return true
         }
       }
