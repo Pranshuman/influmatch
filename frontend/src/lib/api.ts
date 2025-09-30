@@ -188,15 +188,29 @@ class MarketplaceAPI {
     requirements?: string
     deliverables?: string
   }): Promise<{ listing: Listing }> {
+    console.log('🚀 Creating listing with data:', listingData)
+    console.log('🚀 API_BASE:', API_BASE)
+    console.log('🚀 Headers:', this.getHeaders())
+    
     const response = await fetch(`${API_BASE}/api/listings`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(listingData),
     })
+    
+    console.log('🚀 Response status:', response.status)
+    console.log('🚀 Response ok:', response.ok)
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Failed to create listing')
+      let errorMessage = 'Failed to create listing'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
     }
 
     return response.json()
