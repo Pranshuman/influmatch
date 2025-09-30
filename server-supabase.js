@@ -364,7 +364,8 @@ app.post('/api/listings', authenticateToken, async (req, res) => {
       budget: parseInt(budget),
       deadline: deadline || null,
       requirements: requirements || null,
-      deliverables: deliverables || null
+      deliverables: deliverables || null,
+      status: 'active'
     }
 
     const createdListings = await safeSupabaseQuery('listings', 'insert', [newListing])
