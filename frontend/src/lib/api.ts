@@ -1,4 +1,5 @@
 // API service for Influmatch marketplace
+// Updated to use Railway backend URL
 const API_BASE_URL = 'https://influmatch-production.up.railway.app'
 
 export interface User {
