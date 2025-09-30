@@ -88,8 +88,68 @@ async function initializeTables() {
     if (isPostgreSQL) {
       // PostgreSQL table creation (for production)
       console.log('Initializing PostgreSQL tables...')
-      // Note: In real production, you'd create proper PostgreSQL tables here
-      return
+      
+      // Users table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+          id BIGSERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          "userType" TEXT NOT NULL CHECK ("userType" IN ('brand', 'influencer')),
+          bio TEXT,
+          website TEXT,
+          "socialMedia" TEXT,
+          "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+          "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+        )
+      `)
+
+      // Listings table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS listings (
+          id BIGSERIAL PRIMARY KEY,
+          "brandId" BIGINT NOT NULL REFERENCES users(id),
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          category TEXT,
+          budget BIGINT,
+          deadline TEXT,
+          requirements TEXT,
+          deliverables TEXT,
+          "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+          "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+        )
+      `)
+
+      // Proposals table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS proposals (
+          id BIGSERIAL PRIMARY KEY,
+          "listingId" BIGINT NOT NULL REFERENCES listings(id),
+          "influencerId" BIGINT NOT NULL REFERENCES users(id),
+          message TEXT NOT NULL,
+          "proposedBudget" BIGINT,
+          timeline TEXT,
+          status TEXT DEFAULT 'under_review' CHECK (status IN ('under_review', 'accepted', 'rejected', 'withdrawn')),
+          "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+          "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+        )
+      `)
+
+      // Messages table
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id BIGSERIAL PRIMARY KEY,
+          "conversationId" TEXT NOT NULL,
+          "senderId" BIGINT NOT NULL REFERENCES users(id),
+          "recipientId" BIGINT NOT NULL REFERENCES users(id),
+          content TEXT NOT NULL,
+          "createdAt" TIMESTAMPTZ DEFAULT NOW()
+        )
+      `)
+      
+      console.log('PostgreSQL tables initialized successfully')
     } else {
       // SQLite table creation (for development)
       console.log('Initializing SQLite tables...')
