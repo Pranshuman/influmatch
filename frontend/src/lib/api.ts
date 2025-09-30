@@ -1,10 +1,10 @@
 // API service for Influmatch marketplace
-// Centralized API base URL with cache busting - FORCE IMMEDIATE UPDATE
+// Centralized API base URL - FORCE IMMEDIATE UPDATE
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
 
 // Cache busting for this deployment - FORCE IMMEDIATE UPDATE
 const CACHE_BUST = process.env.NEXT_PUBLIC_APP_BUILD_ID || `v4.0-${Date.now()}`
-const API_BASE = `${API_BASE_URL}?v=${CACHE_BUST}`
+const API_BASE = API_BASE_URL
 
 // Debug log to confirm correct URL is being used
 console.log('🚀 API_BASE_URL:', API_BASE_URL)
