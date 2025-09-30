@@ -68,7 +68,7 @@ export default function CreateCampaign() {
 
     try {
       const token = localStorage.getItem('auth_token')
-      const response = await fetch('http://localhost:5050/api/listings', {
+      const response = await fetch('https://influmatch-production.up.railway.app/api/listings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

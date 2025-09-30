@@ -53,7 +53,7 @@ export default function Messages() {
   const fetchConversations = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:5050/api/messages', {
+      const response = await fetch('https://influmatch-production.up.railway.app/api/messages', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -75,7 +75,7 @@ export default function Messages() {
   const fetchMessages = async (conversationId: string) => {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`http://localhost:5050/api/messages/${conversationId}`, {
+      const response = await fetch(`https://influmatch-production.up.railway.app/api/messages/${conversationId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,7 +100,7 @@ export default function Messages() {
       const conversation = conversations.find(c => c.id === selectedConversation)
       const otherParticipant = conversation?.participants.find(p => p !== user?.id)
       
-      const response = await fetch('http://localhost:5050/api/messages', {
+      const response = await fetch('https://influmatch-production.up.railway.app/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -6,7 +6,7 @@ import { Listing } from '@/lib/api'
 
 export default function Marketplace() {
   const { data, loading, error } = useApi<{ listings: Listing[] }>(
-    'http://localhost:5050/api/listings',
+    'https://influmatch-production.up.railway.app/api/listings',
     { timeoutMs: 15000, cache: 'no-store' }
   )
 
