@@ -62,6 +62,12 @@ let supabaseClient = null;
 
 (async () => {
   try {
+    console.log("[Supabase] 🔄 Initializing Supabase client...");
+    console.log("[Supabase] Environment check:");
+    console.log("  - DATABASE_URL:", process.env.DATABASE_URL ? "Set" : "Not set");
+    console.log("  - SUPABASE_URL:", process.env.SUPABASE_URL ? "Set" : "Not set");
+    console.log("  - SUPABASE_SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "Set" : "Not set");
+    
     supabaseClient = getSupabaseClient();
     console.log("[Supabase] ✅ Client initialized successfully");
     
@@ -71,32 +77,42 @@ let supabaseClient = null;
   } catch (err) {
     console.error("[Supabase] ❌ Failed to initialize client. Server will still run.");
     console.error("[Supabase] Error details:", err.message);
+    console.error("[Supabase] Error stack:", err.stack);
   }
 })();
 
 // ---- Authentication Routes ----
 app.post('/auth/register', async (req, res) => {
   try {
+    console.log('[REGISTER] Starting registration process...');
+    
     // Check if Supabase client is available
     if (!supabaseClient) {
+      console.error('[REGISTER] ❌ Supabase client not available');
       return res.status(503).json({ error: 'Database unavailable, please retry shortly.' });
     }
 
     const { name, email, password, userType, bio, website, socialMedia } = req.body
+    console.log('[REGISTER] User data:', { name, email, userType });
 
     // Validate required fields
     if (!email || !password || !userType || !name) {
+      console.error('[REGISTER] ❌ Missing required fields');
       return res.status(400).json({ error: 'Missing required fields' })
     }
 
     // Check if user already exists
+    console.log('[REGISTER] Checking if user exists...');
     const existingUsers = await safeSupabaseQuery('users', 'select', null, { email });
+    console.log('[REGISTER] Existing users found:', existingUsers?.length || 0);
     
     if (existingUsers && existingUsers.length > 0) {
+      console.log('[REGISTER] ❌ User already exists');
       return res.status(400).json({ error: 'User already exists' })
     }
 
     // Hash password
+    console.log('[REGISTER] Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 10)
 
     // Create user
@@ -110,16 +126,26 @@ app.post('/auth/register', async (req, res) => {
       socialMedia: socialMedia || null
     };
 
+    console.log('[REGISTER] Creating user in database...');
     const createdUsers = await safeSupabaseQuery('users', 'insert', [newUser]);
+    console.log('[REGISTER] User created:', createdUsers);
+    
+    if (!createdUsers || createdUsers.length === 0) {
+      console.error('[REGISTER] ❌ No user returned from database');
+      return res.status(500).json({ error: 'Failed to create user' });
+    }
+    
     const user = createdUsers[0];
 
     // Generate JWT token
+    console.log('[REGISTER] Generating JWT token...');
     const token = jwt.sign(
       { userId: user.id, email: user.email, userType: user.userType },
       JWT_SECRET,
       { expiresIn: '7d' }
     )
 
+    console.log('[REGISTER] ✅ Registration successful');
     // Return user data (without password)
     res.json({
       message: 'User registered successfully',
@@ -136,7 +162,8 @@ app.post('/auth/register', async (req, res) => {
     })
 
   } catch (error) {
-    console.error('Registration error:', error)
+    console.error('[REGISTER] ❌ Registration error:', error);
+    console.error('[REGISTER] Error stack:', error.stack);
     res.status(500).json({ error: 'Registration failed' })
   }
 })
