@@ -1,9 +1,17 @@
 // API service for Influmatch marketplace
-// Updated to use Railway backend URL - v2.0
-const API_BASE_URL = 'https://influmatch-production.up.railway.app'
+// Centralized API base URL with cache busting
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 
+  (process.env.NODE_ENV === "production" 
+    ? "https://influmatch-production.up.railway.app" 
+    : "http://localhost:5050")
+
+// Cache busting for this deployment
+const CACHE_BUST = process.env.NEXT_PUBLIC_APP_BUILD_ID || 'v3.0'
+const API_BASE = `${API_BASE}?v=${CACHE_BUST}`
 
 // Debug log to confirm correct URL is being used
-console.log('🚀 API_BASE_URL:', API_BASE_URL)
+console.log('🚀 API_BASE:', API_BASE)
+console.log('🚀 API_BASE with cache bust:', API_BASE)
 
 export interface User {
   id: number
@@ -102,7 +110,7 @@ class MarketplaceAPI {
     name: string
     company?: string
   }): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(userData),
@@ -119,7 +127,7 @@ class MarketplaceAPI {
   }
 
   async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ email, password }),
@@ -136,7 +144,7 @@ class MarketplaceAPI {
   }
 
   async getListings(): Promise<{ listings: Listing[] }> {
-    const response = await fetch(`${API_BASE_URL}/api/listings`, {
+    const response = await fetch(`${API_BASE}/api/listings`, {
       headers: this.getHeaders(),
     })
 
@@ -148,7 +156,7 @@ class MarketplaceAPI {
   }
 
   async getListing(id: string): Promise<{ listing: Listing }> {
-    const response = await fetch(`${API_BASE_URL}/api/listings/${id}`, {
+    const response = await fetch(`${API_BASE}/api/listings/${id}`, {
       headers: this.getHeaders(),
     })
 
@@ -168,7 +176,7 @@ class MarketplaceAPI {
     requirements?: string
     deliverables?: string
   }): Promise<{ listing: Listing }> {
-    const response = await fetch(`${API_BASE_URL}/api/listings`, {
+    const response = await fetch(`${API_BASE}/api/listings`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(listingData),
@@ -186,7 +194,7 @@ class MarketplaceAPI {
     message: string
     proposedBudget?: number
   }): Promise<{ proposal: Proposal }> {
-    const response = await fetch(`${API_BASE_URL}/api/listings/${listingId}/proposals`, {
+    const response = await fetch(`${API_BASE}/api/listings/${listingId}/proposals`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(proposalData),
@@ -201,7 +209,7 @@ class MarketplaceAPI {
   }
 
   async getUser(id: string | number): Promise<{ user: User }> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+    const response = await fetch(`${API_BASE}/api/users/${id}`, {
       headers: this.getHeaders(),
     })
 
@@ -213,7 +221,7 @@ class MarketplaceAPI {
   }
 
   async updateUser(id: string, userData: Partial<User>): Promise<{ user: User }> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+    const response = await fetch(`${API_BASE}/api/users/${id}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify(userData),
@@ -231,7 +239,7 @@ class MarketplaceAPI {
     receiverId: string
     content: string
   }): Promise<{ message: Message }> {
-    const response = await fetch(`${API_BASE_URL}/api/messages`, {
+    const response = await fetch(`${API_BASE}/api/messages`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(messageData),
@@ -246,7 +254,7 @@ class MarketplaceAPI {
   }
 
   async getMessages(conversationId: string): Promise<{ messages: Message[] }> {
-    const response = await fetch(`${API_BASE_URL}/api/messages/${conversationId}`, {
+    const response = await fetch(`${API_BASE}/api/messages/${conversationId}`, {
       headers: this.getHeaders(),
     })
 
@@ -258,7 +266,7 @@ class MarketplaceAPI {
   }
 
   async healthCheck(): Promise<{ ok: boolean; timestamp: string; database: string }> {
-    const response = await fetch(`${API_BASE_URL}/health`)
+    const response = await fetch(`${API_BASE}/health`)
     
     if (!response.ok) {
       throw new Error('Health check failed')
@@ -269,7 +277,7 @@ class MarketplaceAPI {
 
   // Proposal Status Management Methods
   async getMyProposals(): Promise<{ proposals: Proposal[] }> {
-    const response = await fetch(`${API_BASE_URL}/api/proposals/my-proposals`, {
+    const response = await fetch(`${API_BASE}/api/proposals/my-proposals`, {
       headers: this.getHeaders(),
     })
 
@@ -282,7 +290,7 @@ class MarketplaceAPI {
   }
 
   async updateProposalStatus(proposalId: number, status: 'under_review' | 'accepted' | 'rejected' | 'withdrawn'): Promise<{ message: string; proposal: Proposal }> {
-    const response = await fetch(`${API_BASE_URL}/api/proposals/${proposalId}/status`, {
+    const response = await fetch(`${API_BASE}/api/proposals/${proposalId}/status`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify({ status }),
@@ -301,7 +309,7 @@ class MarketplaceAPI {
     proposedBudget: number
     timeline: string
   }): Promise<{ message: string; proposal: Proposal }> {
-    const response = await fetch(`${API_BASE_URL}/api/proposals/${proposalId}`, {
+    const response = await fetch(`${API_BASE}/api/proposals/${proposalId}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify(proposalData),
