@@ -289,7 +289,7 @@ export default function CampaignManagementPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await marketplaceAPI.getAllListings()
+      const response = await marketplaceAPI.getListings()
       // Filter to only show campaigns created by the current brand
       const myCampaigns = response.listings.filter(listing => listing.brandId === user?.id)
       setListings(myCampaigns)
