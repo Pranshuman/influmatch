@@ -42,7 +42,7 @@ let supabase = null;
 export function getSupabaseClient() {
   if (!supabase) {
     try {
-      const { supabaseUrl, serviceRoleKey } = parseSupabaseConfig();
+      const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
       
       console.log(`[Supabase] Initializing client for: ${supabaseUrl}`);
       
