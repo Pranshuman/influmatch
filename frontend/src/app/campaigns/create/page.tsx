@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { marketplaceAPI } from '@/lib/api'
 
 export default function CreateCampaign() {
   const [formData, setFormData] = useState({
@@ -67,32 +68,20 @@ export default function CreateCampaign() {
     setError('')
 
     try {
-      const token = localStorage.getItem('auth_token')
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
-      const response = await fetch(`${API_BASE_URL}/api/listings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          budget: parseFloat(formData.budget),
-          deadline: formData.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        }),
+      const result = await marketplaceAPI.createListing({
+        ...formData,
+        budget: parseFloat(formData.budget),
+        deadline: formData.deadline ? new Date(formData.deadline).getTime() : undefined
       })
-
-      if (response.ok) {
+      
+      if (result.listing) {
         setSuccess(true)
         setTimeout(() => {
           router.push('/dashboard')
         }, 2000)
-      } else {
-        const errorData = await response.json()
-        setError(errorData.message || 'Failed to create campaign')
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.')
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }

@@ -1,17 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import { useApi } from '@/hooks/useApi'
+import { useState, useEffect } from 'react'
 import { Listing, marketplaceAPI } from '@/lib/api'
 
 export default function Marketplace() {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
-  const { data, loading, error } = useApi<{ listings: Listing[] }>(
-    `${API_BASE_URL}/api/listings`,
-    { timeoutMs: 15000, cache: 'no-store' }
-  )
+  const [listings, setListings] = useState<Listing[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const listings = data?.listings || []
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const data = await marketplaceAPI.getListings()
+        setListings(data.listings)
+      } catch (err: any) {
+        setError(err.message || 'Failed to load campaigns')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchListings()
+  }, [])
 
   if (loading) {
     return (

@@ -167,6 +167,18 @@ class MarketplaceAPI {
     return response.json()
   }
 
+  async getProposalsForListing(listingId: string): Promise<{ proposals: Proposal[] }> {
+    const response = await fetch(`${API_BASE}/api/listings/${listingId}/proposals`, {
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch proposals')
+    }
+
+    return response.json()
+  }
+
   async createListing(listingData: {
     title: string
     description: string

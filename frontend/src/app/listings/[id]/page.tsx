@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { marketplaceAPI } from '@/lib/api'
 
 interface Listing {
   id: string
@@ -61,17 +62,11 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
 
   const fetchListing = async () => {
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
-      const response = await fetch(`${API_BASE_URL}/api/listings/${resolvedParams.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setListing(data.listing)
-        console.log('📋 Listing loaded:', data.listing.title, 'owned by brand ID:', data.listing.brandId)
-      } else {
-        setError('Campaign not found')
-      }
-    } catch (err) {
-      setError('Error loading campaign')
+      const data = await marketplaceAPI.getListing(resolvedParams.id)
+      setListing(data.listing)
+      console.log('📋 Listing loaded:', data.listing.title, 'owned by brand ID:', data.listing.brandId)
+    } catch (err: any) {
+      setError(err.message || 'Error loading campaign')
     } finally {
       setLoading(false)
     }
@@ -79,27 +74,13 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
 
   const fetchProposals = async () => {
     try {
-      const token = localStorage.getItem('auth_token')
       console.log('🔍 Fetching proposals for listing:', resolvedParams.id)
       console.log('👤 Current user:', user ? `${user.name} (ID: ${user.id}, Type: ${user.userType})` : 'Not logged in')
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
-      const response = await fetch(`${API_BASE_URL}/api/listings/${resolvedParams.id}/proposals`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('✅ Proposals fetched successfully:', data.proposals.length, 'proposals')
-        setProposals(data.proposals || [])
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.log('❌ Failed to fetch proposals:', response.status, response.statusText, errorData.error || '')
-        setProposals([])
-      }
-    } catch (err) {
+      const data = await marketplaceAPI.getProposalsForListing(resolvedParams.id)
+      console.log('✅ Proposals fetched successfully:', data.proposals.length, 'proposals')
+      setProposals(data.proposals || [])
+    } catch (err: any) {
       console.error('❌ Error fetching proposals:', err)
       setProposals([])
     }
@@ -114,32 +95,19 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
 
     setSubmittingProposal(true)
     try {
-      const token = localStorage.getItem('auth_token')
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://influmatch-production.up.railway.app"
-      const response = await fetch(`${API_BASE_URL}/api/listings/${resolvedParams.id}/proposals`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          message: proposalData.message,
-          proposedBudget: parseFloat(proposalData.proposedBudget),
-          timeline: '2 weeks'
-        }),
+      const result = await marketplaceAPI.submitProposal(resolvedParams.id, {
+        message: proposalData.message,
+        proposedBudget: parseFloat(proposalData.proposedBudget)
       })
 
-      if (response.ok) {
+      if (result.proposal) {
         setShowProposalForm(false)
         setProposalData({ message: '', proposedBudget: '' })
         fetchProposals() // Refresh proposals
         alert('Proposal submitted successfully!')
-      } else {
-        const errorData = await response.json()
-        alert(errorData.message || 'Failed to submit proposal')
       }
-    } catch (err) {
-      alert('Error submitting proposal')
+    } catch (err: any) {
+      alert(`Error submitting proposal: ${err.message || 'Unknown error'}`)
     } finally {
       setSubmittingProposal(false)
     }
