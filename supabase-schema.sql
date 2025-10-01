@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS messages (
     "conversationId" TEXT NOT NULL,
     "senderId" BIGINT NOT NULL REFERENCES users(id),
     "recipientId" BIGINT NOT NULL REFERENCES users(id),
+    "proposalId" BIGINT REFERENCES proposals(id),
     content TEXT NOT NULL,
     "createdAt" TIMESTAMPTZ DEFAULT NOW()
 );
@@ -58,6 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_listings_brand_id ON listings("brandId");
 CREATE INDEX IF NOT EXISTS idx_proposals_listing_id ON proposals("listingId");
 CREATE INDEX IF NOT EXISTS idx_proposals_influencer_id ON proposals("influencerId");
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages("conversationId");
+CREATE INDEX IF NOT EXISTS idx_messages_proposal_id ON messages("proposalId");
 
 -- Enable Row Level Security (RLS) for better security
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;

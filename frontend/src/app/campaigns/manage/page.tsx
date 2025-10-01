@@ -132,13 +132,21 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate }: {
             </>
           )}
           {proposal.status === 'accepted' && (
-            <button
-              onClick={() => handleStatusUpdate('withdrawn')}
-              disabled={isUpdating}
-              className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-            >
-              {isUpdating ? 'Updating...' : 'Withdraw'}
-            </button>
+            <>
+              <button
+                onClick={() => window.open(`/proposals/${proposal.id}/chat`, '_blank')}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                Start Chat
+              </button>
+              <button
+                onClick={() => handleStatusUpdate('withdrawn')}
+                disabled={isUpdating}
+                className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                {isUpdating ? 'Updating...' : 'Withdraw'}
+              </button>
+            </>
           )}
         </div>
       )}

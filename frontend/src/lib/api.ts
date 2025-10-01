@@ -262,8 +262,10 @@ class MarketplaceAPI {
   }
 
   async sendMessage(messageData: {
-    receiverId: string
+    receiverId?: string
     content: string
+    proposalId?: number
+    conversationId?: string
   }): Promise<{ message: Message }> {
     const response = await fetch(`${API_BASE}/api/messages`, {
       method: 'POST',
@@ -272,8 +274,14 @@ class MarketplaceAPI {
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Failed to send message')
+      let errorMessage = 'Failed to send message'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
     }
 
     return response.json()
@@ -355,6 +363,56 @@ class MarketplaceAPI {
         errorMessage = error.message || error.error || errorMessage
       } catch (e) {
         // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  // Proposal Chat Methods
+  async startProposalChat(proposalId: number): Promise<{ 
+    message: string
+    conversationId: string
+    proposal: Proposal
+    hasExistingMessages: boolean
+  }> {
+    const response = await fetch(`${API_BASE}/api/proposals/${proposalId}/start-chat`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to start proposal chat'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  async getProposalChat(proposalId: number): Promise<{
+    proposal: Proposal
+    listing: Listing
+    messages: Message[]
+    conversationId: string
+  }> {
+    const response = await fetch(`${API_BASE}/api/proposals/${proposalId}/chat`, {
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch proposal chat'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
         errorMessage = response.statusText || errorMessage
       }
       throw new Error(errorMessage)

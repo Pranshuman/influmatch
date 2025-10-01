@@ -856,26 +856,77 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
       return res.status(503).json({ error: 'Database unavailable' })
     }
 
-    const { receiverId, content } = req.body
+    const { receiverId, content, proposalId, conversationId } = req.body
 
-    if (!receiverId || !content) {
-      return res.status(400).json({ error: 'Missing required fields' })
+    if (!content) {
+      return res.status(400).json({ error: 'Message content is required' })
     }
 
-    const receiverIdInt = parseInt(receiverId)
-    if (isNaN(receiverIdInt)) {
-      return res.status(400).json({ error: 'Invalid receiver ID' })
-    }
+    let finalConversationId = conversationId
+    let finalReceiverId = receiverId
 
-    // Generate conversation ID (smaller user ID first)
-    const conversationId = req.user.userId < receiverIdInt 
-      ? `${req.user.userId}-${receiverIdInt}` 
-      : `${receiverIdInt}-${req.user.userId}`
+    // Handle proposal-specific messages
+    if (proposalId) {
+      const proposalIdInt = parseInt(proposalId)
+      if (isNaN(proposalIdInt)) {
+        return res.status(400).json({ error: 'Invalid proposal ID' })
+      }
+
+      // Get the proposal to verify access
+      const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: proposalIdInt })
+      if (!proposals || proposals.length === 0) {
+        return res.status(404).json({ error: 'Proposal not found' })
+      }
+
+      const proposal = proposals[0]
+      
+      // Get the listing
+      const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+      if (!listings || listings.length === 0) {
+        return res.status(404).json({ error: 'Listing not found' })
+      }
+
+      const listing = listings[0]
+      
+      // Check if user has permission to send messages in this proposal chat
+      const isBrandOwner = req.user.userType === 'brand' && req.user.userId === listing.brandId
+      const isInfluencer = req.user.userType === 'influencer' && req.user.userId === proposal.influencerId
+      
+      if (!isBrandOwner && !isInfluencer) {
+        return res.status(403).json({ error: 'Access denied' })
+      }
+
+      // Check if proposal is accepted
+      if (proposal.status !== 'accepted') {
+        return res.status(400).json({ error: 'Messages can only be sent for accepted proposals' })
+      }
+
+      // Set conversation ID and receiver ID for proposal chat
+      finalConversationId = `proposal-${proposalIdInt}`
+      finalReceiverId = req.user.userType === 'brand' ? proposal.influencerId : listing.brandId
+    } else {
+      // Handle regular user-to-user messages
+      if (!receiverId) {
+        return res.status(400).json({ error: 'Receiver ID is required for regular messages' })
+      }
+
+      const receiverIdInt = parseInt(receiverId)
+      if (isNaN(receiverIdInt)) {
+        return res.status(400).json({ error: 'Invalid receiver ID' })
+      }
+
+      // Generate conversation ID (smaller user ID first)
+      finalConversationId = req.user.userId < receiverIdInt 
+        ? `${req.user.userId}-${receiverIdInt}` 
+        : `${receiverIdInt}-${req.user.userId}`
+      finalReceiverId = receiverIdInt
+    }
 
     const newMessage = {
-      conversationId,
+      conversationId: finalConversationId,
       senderId: req.user.userId,
-      recipientId: receiverIdInt,
+      recipientId: finalReceiverId,
+      proposalId: proposalId ? parseInt(proposalId) : null,
       content
     }
 
@@ -936,6 +987,150 @@ app.get('/api/messages/:conversationId', authenticateToken, async (req, res) => 
   } catch (error) {
     console.error('[GET_MESSAGES] Error:', error)
     res.status(500).json({ error: 'Failed to fetch messages' })
+  }
+})
+
+// POST start chat for accepted proposal
+app.post('/api/proposals/:id/start-chat', authenticateToken, async (req, res) => {
+  try {
+    console.log('[START_PROPOSAL_CHAT] Starting chat for proposal:', req.params.id)
+    
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
+    }
+
+    if (req.user.userType !== 'brand') {
+      return res.status(403).json({ error: 'Only brands can start proposal chats' })
+    }
+
+    const proposalId = parseInt(req.params.id)
+    if (isNaN(proposalId)) {
+      return res.status(400).json({ error: 'Invalid proposal ID' })
+    }
+
+    // Get the proposal to verify it exists and is accepted
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+    
+    // Get the listing to check if user is the brand owner
+    const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+    if (!listings || listings.length === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+
+    const listing = listings[0]
+    if (listing.brandId !== req.user.userId) {
+      return res.status(403).json({ error: 'You can only start chats for your own campaign proposals' })
+    }
+
+    // Check if proposal is accepted
+    if (proposal.status !== 'accepted') {
+      return res.status(400).json({ error: 'Chat can only be started for accepted proposals' })
+    }
+
+    // Generate conversation ID for this proposal
+    const conversationId = `proposal-${proposalId}`
+
+    // Check if chat already exists
+    const existingMessages = await safeSupabaseQuery('messages', 'select', null, { conversationId })
+    
+    res.json({
+      message: 'Chat ready for proposal',
+      conversationId,
+      proposal: {
+        ...proposal,
+        listing: listing
+      },
+      hasExistingMessages: existingMessages && existingMessages.length > 0
+    })
+  } catch (error) {
+    console.error('[START_PROPOSAL_CHAT] Error:', error)
+    res.status(500).json({ error: 'Failed to start proposal chat' })
+  }
+})
+
+// GET proposal chat messages
+app.get('/api/proposals/:id/chat', authenticateToken, async (req, res) => {
+  try {
+    console.log('[GET_PROPOSAL_CHAT] Fetching chat for proposal:', req.params.id)
+    
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
+    }
+
+    const proposalId = parseInt(req.params.id)
+    if (isNaN(proposalId)) {
+      return res.status(400).json({ error: 'Invalid proposal ID' })
+    }
+
+    // Get the proposal
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+    
+    // Get the listing
+    const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+    if (!listings || listings.length === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+
+    const listing = listings[0]
+    
+    // Check if user has permission to view this chat
+    const isBrandOwner = req.user.userType === 'brand' && req.user.userId === listing.brandId
+    const isInfluencer = req.user.userType === 'influencer' && req.user.userId === proposal.influencerId
+    
+    if (!isBrandOwner && !isInfluencer) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    // Check if proposal is accepted
+    if (proposal.status !== 'accepted') {
+      return res.status(400).json({ error: 'Chat is only available for accepted proposals' })
+    }
+
+    // Get messages for this proposal
+    const conversationId = `proposal-${proposalId}`
+    const messages = await safeSupabaseQuery('messages', 'select', null, { conversationId })
+    
+    // Get sender details for each message
+    const messagesWithUsers = await Promise.all(
+      (messages || []).map(async (message) => {
+        const sender = await safeSupabaseQuery('users', 'select', null, { id: message.senderId })
+        
+        return {
+          ...message,
+          sender: sender[0] || null
+        }
+      })
+    )
+
+    // Get influencer and brand details
+    const influencer = await safeSupabaseQuery('users', 'select', null, { id: proposal.influencerId })
+    const brand = await safeSupabaseQuery('users', 'select', null, { id: listing.brandId })
+
+    res.json({
+      proposal: {
+        ...proposal,
+        influencer: influencer[0] || null
+      },
+      listing: {
+        ...listing,
+        brand: brand[0] || null
+      },
+      messages: messagesWithUsers,
+      conversationId
+    })
+  } catch (error) {
+    console.error('[GET_PROPOSAL_CHAT] Error:', error)
+    res.status(500).json({ error: 'Failed to fetch proposal chat' })
   }
 })
 
