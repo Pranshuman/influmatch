@@ -225,35 +225,70 @@ export default function ProposalChatPage({ params }: { params: Promise<{ id: str
           {/* Chat Area */}
           <div className="flex-1 flex flex-col">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-2">
               {messages.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
                   <p>No messages yet. Start the conversation!</p>
                 </div>
               ) : (
-                messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
-                  >
+                messages.map((message, index) => {
+                  const isCurrentUser = message.senderId === user?.id
+                  const previousMessage = index > 0 ? messages[index - 1] : null
+                  const nextMessage = index < messages.length - 1 ? messages[index + 1] : null
+                  
+                  const showSenderName = !previousMessage || previousMessage.senderId !== message.senderId
+                  const isLastInGroup = !nextMessage || nextMessage.senderId !== message.senderId
+                  
+                  return (
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.senderId === user?.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white border border-gray-200 text-gray-900'
-                      }`}
+                      key={message.id}
+                      className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-1`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      <p
-                        className={`text-xs mt-1 ${
-                          message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'
-                        }`}
-                      >
-                        {formatTime(message.createdAt)}
-                      </p>
+                      <div className={`max-w-xs lg:max-w-md ${isCurrentUser ? 'items-end' : 'items-start'} flex flex-col`}>
+                        {/* Sender Name */}
+                        {showSenderName && !isCurrentUser && (
+                          <p className="text-xs text-gray-500 mb-1 px-2">
+                            {message.sender?.name || 'Unknown User'}
+                          </p>
+                        )}
+                        
+                        {/* Message Bubble */}
+                        <div
+                          className={`px-4 py-2 ${
+                            isCurrentUser
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white border border-gray-200 text-gray-900'
+                          } ${
+                            showSenderName && isLastInGroup
+                              ? 'rounded-lg'
+                              : showSenderName
+                              ? isCurrentUser
+                                ? 'rounded-t-lg rounded-br-sm'
+                                : 'rounded-t-lg rounded-bl-sm'
+                              : isLastInGroup
+                              ? isCurrentUser
+                                ? 'rounded-b-lg rounded-tr-sm'
+                                : 'rounded-b-lg rounded-tl-sm'
+                              : isCurrentUser
+                              ? 'rounded-r-sm'
+                              : 'rounded-l-sm'
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                          {isLastInGroup && (
+                            <p
+                              className={`text-xs mt-1 ${
+                                isCurrentUser ? 'text-blue-100' : 'text-gray-500'
+                              }`}
+                            >
+                              {formatTime(message.createdAt)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
               <div ref={messagesEndRef} />
             </div>
