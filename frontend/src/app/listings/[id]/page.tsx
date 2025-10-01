@@ -136,59 +136,86 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
   const hasExistingProposal = userProposal !== null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <Link
-              href="/marketplace"
-              className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              ← Back to Marketplace
-            </Link>
+        <div className="max-w-6xl mx-auto">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
+            <div className="flex justify-between items-center">
+              <Link
+                href="/marketplace"
+                className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 px-6 py-3 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+              >
+                ← Back to Marketplace
+              </Link>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                {listing.status}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h1 className="text-3xl font-bold text-gray-900">{listing.title}</h1>
-                  <span className="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">
-                    {listing.status}
-                  </span>
-                </div>
-                
-                <div className="flex items-center text-gray-600 mb-6">
-                  <span>Posted by <strong>{listing.brandName}</strong></span>
-                  <span className="mx-2">•</span>
-                  <span>{new Date(listing.createdAt).toLocaleDateString()}</span>
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-6">
+                <div className="mb-6">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                    {listing.title}
+                  </h1>
+                  
+                  <div className="flex items-center text-gray-600 mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                      {listing.brandName?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Posted by <strong>{listing.brandName}</strong></p>
+                      <p className="text-sm text-gray-500">{new Date(listing.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="prose max-w-none">
-                  <p className="text-gray-700 text-lg leading-relaxed mb-6">
+                  <p className="text-gray-700 text-lg leading-relaxed mb-8">
                     {listing.description}
                   </p>
                 </div>
 
-                {listing.requirements && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Requirements</h3>
-                    <p className="text-gray-700">{listing.requirements}</p>
-                  </div>
-                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {listing.requirements && (
+                    <div className="bg-blue-50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                        <span className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                          <span className="text-blue-600 text-sm">📋</span>
+                        </span>
+                        Requirements
+                      </h3>
+                      <p className="text-blue-800 leading-relaxed">{listing.requirements}</p>
+                    </div>
+                  )}
 
-                {listing.deliverables && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Expected Deliverables</h3>
-                    <p className="text-gray-700">{listing.deliverables}</p>
-                  </div>
-                )}
+                  {listing.deliverables && (
+                    <div className="bg-green-50 rounded-xl p-6">
+                      <h3 className="text-lg font-semibold text-green-900 mb-3 flex items-center">
+                        <span className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center mr-2">
+                          <span className="text-green-600 text-sm">🎯</span>
+                        </span>
+                        Expected Deliverables
+                      </h3>
+                      <p className="text-green-800 leading-relaxed">{listing.deliverables}</p>
+                    </div>
+                  )}
+                </div>
 
                 {listing.deadline && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Deadline</h3>
-                    <p className="text-gray-700">{new Date(listing.deadline).toLocaleDateString()}</p>
+                  <div className="mt-6 bg-orange-50 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-orange-900 mb-2 flex items-center">
+                      <span className="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center mr-2">
+                        <span className="text-orange-600 text-sm">⏰</span>
+                      </span>
+                      Application Deadline
+                    </h3>
+                    <p className="text-orange-800 font-medium">{new Date(listing.deadline).toLocaleDateString()}</p>
                   </div>
                 )}
               </div>
@@ -227,43 +254,73 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
 
             {/* Sidebar */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Budget:</span>
-                    <span className="font-bold text-green-600 text-xl">
-                      ${listing.budget?.toLocaleString() || '0'}
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sticky top-8">
+                {/* Campaign Summary */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <span className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                      <span className="text-blue-600 text-sm">💰</span>
                     </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Category:</span>
-                    <span className="font-medium">{listing.category}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <span className="font-medium">{listing.status}</span>
+                    Campaign Summary
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="bg-green-50 rounded-xl p-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-green-700 font-medium">Budget:</span>
+                        <span className="font-bold text-green-600 text-xl">
+                          ${listing.budget?.toLocaleString() || '0'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-700 font-medium">Category:</span>
+                        <span className="font-medium text-blue-600 capitalize">{listing.category}</span>
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 rounded-xl p-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-purple-700 font-medium">Status:</span>
+                        <span className="font-medium text-purple-600">{listing.status}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Show proposal error/success message */}
                 {proposalError && (
-                  <div className={`mb-4 p-3 rounded-lg ${
+                  <div className={`mb-6 p-4 rounded-xl flex items-center ${
                     proposalError.startsWith('success:') 
-                      ? 'bg-green-100 text-green-800 border border-green-200' 
-                      : 'bg-red-100 text-red-800 border border-red-200'
+                      ? 'bg-green-50 text-green-800 border border-green-200' 
+                      : 'bg-red-50 text-red-800 border border-red-200'
                   }`}>
-                    {proposalError.startsWith('success:') ? proposalError.substring(8) : proposalError}
+                    <span className="mr-3 text-xl">
+                      {proposalError.startsWith('success:') ? '✅' : '⚠️'}
+                    </span>
+                    <div>
+                      <p className="font-medium">
+                        {proposalError.startsWith('success:') ? 'Success!' : 'Error'}
+                      </p>
+                      <p className="text-sm">
+                        {proposalError.startsWith('success:') ? proposalError.substring(8) : proposalError}
+                      </p>
+                    </div>
                   </div>
                 )}
 
                 {/* Show existing proposal status */}
                 {hasExistingProposal && userProposal && (
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="font-semibold text-blue-900 mb-2">Your Proposal Status</h4>
-                    <div className="space-y-2">
+                  <div className="mb-6 p-6 bg-blue-50 border border-blue-200 rounded-xl">
+                    <h4 className="font-semibold text-blue-900 mb-4 flex items-center">
+                      <span className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                        <span className="text-blue-600 text-sm">📝</span>
+                      </span>
+                      Your Proposal Status
+                    </h4>
+                    <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-blue-700">Status:</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        <span className="text-blue-700 font-medium">Status:</span>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                           userProposal.status === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
                           userProposal.status === 'accepted' ? 'bg-green-100 text-green-800' :
                           userProposal.status === 'rejected' ? 'bg-red-100 text-red-800' :
@@ -273,19 +330,19 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-blue-700">Your Rate:</span>
-                        <span className="font-medium text-blue-900">${userProposal.proposedBudget?.toLocaleString() || '0'}</span>
+                        <span className="text-blue-700 font-medium">Your Rate:</span>
+                        <span className="font-bold text-blue-900 text-lg">${userProposal.proposedBudget?.toLocaleString() || '0'}</span>
                       </div>
                       <div className="text-sm text-blue-600">
                         Submitted: {new Date(userProposal.createdAt).toLocaleDateString()}
                       </div>
                       {userProposal.status === 'under_review' && (
-                        <div className="pt-2">
+                        <div className="pt-3">
                           <Link
                             href={`/proposals/edit/${userProposal.id}`}
-                            className="text-blue-600 hover:text-blue-800 text-sm underline"
+                            className="inline-flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                           >
-                            Edit your proposal
+                            ✏️ Edit Proposal
                           </Link>
                         </div>
                       )}
@@ -293,65 +350,84 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
+                {/* Proposal Form */}
                 {canSubmitProposal && (
                   <div>
                     {!showProposalForm ? (
                       <button
                         onClick={() => setShowProposalForm(true)}
-                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
                       >
-                        Submit Proposal
+                        🚀 Submit Your Proposal
                       </button>
                     ) : (
-                      <form onSubmit={handleProposalSubmit} className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Your Message
-                          </label>
-                          <textarea
-                            value={proposalData.message}
-                            onChange={(e) => setProposalData({ ...proposalData, message: e.target.value })}
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Tell the brand why you're perfect for this campaign..."
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Your Rate ($)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={proposalData.proposedBudget}
-                            onChange={(e) => setProposalData({ ...proposalData, proposedBudget: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="1000"
-                            required
-                          />
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            type="submit"
-                            disabled={submittingProposal}
-                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                          >
-                            {submittingProposal ? 'Submitting...' : 'Submit'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowProposalForm(false)
-                              setProposalError('')
-                            }}
-                            className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
+                      <div className="bg-gray-50 rounded-xl p-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                          <span className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                            <span className="text-blue-600 text-sm">✍️</span>
+                          </span>
+                          Submit Proposal
+                        </h4>
+                        <form onSubmit={handleProposalSubmit} className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Your Message *
+                            </label>
+                            <textarea
+                              value={proposalData.message}
+                              onChange={(e) => setProposalData({ ...proposalData, message: e.target.value })}
+                              rows={4}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                              placeholder="Tell the brand why you're perfect for this campaign. Highlight your experience, audience, and how you can help achieve their goals..."
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Your Rate ($) *
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={proposalData.proposedBudget}
+                                onChange={(e) => setProposalData({ ...proposalData, proposedBudget: e.target.value })}
+                                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                placeholder="1000"
+                                required
+                              />
+                            </div>
+                          </div>
+                          <div className="flex space-x-3 pt-2">
+                            <button
+                              type="submit"
+                              disabled={submittingProposal}
+                              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {submittingProposal ? (
+                                <span className="flex items-center justify-center">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                  Submitting...
+                                </span>
+                              ) : (
+                                '🚀 Submit Proposal'
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowProposalForm(false)
+                                setProposalError('')
+                              }}
+                              className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 py-3 px-4 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      </div>
                     )}
                   </div>
                 )}

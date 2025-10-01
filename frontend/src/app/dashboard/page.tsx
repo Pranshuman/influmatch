@@ -172,23 +172,6 @@ export default function Dashboard() {
             </>
           )}
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-200">
-            <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mr-4">
-                <span className="text-2xl">💬</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Messages</h3>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Connect and communicate with your network
-            </p>
-            <Link
-              href="/messages"
-              className="block w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 text-center font-medium shadow-md hover:shadow-lg"
-            >
-              View Messages
-            </Link>
-          </div>
         </div>
       </div>
     </div>
