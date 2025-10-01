@@ -55,18 +55,20 @@ export default function Home() {
                 Connect brands with influencers for authentic partnerships
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                <Link
-                  href="/marketplace"
-                  className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow block"
-                >
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Browse Campaigns
-                  </h3>
-                  <p className="text-gray-600">
-                    Discover exciting collaboration opportunities
-                  </p>
-                </Link>
+              <div className={`grid gap-6 max-w-4xl mx-auto ${user?.userType === 'influencer' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                {user?.userType === 'influencer' && (
+                  <Link
+                    href="/marketplace"
+                    className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow block"
+                  >
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Browse Campaigns
+                    </h3>
+                    <p className="text-gray-600">
+                      Discover exciting collaboration opportunities
+                    </p>
+                  </Link>
+                )}
                 
                 <Link
                   href="/dashboard"
@@ -76,7 +78,10 @@ export default function Home() {
                     Your Dashboard
                   </h3>
                   <p className="text-gray-600">
-                    Manage your campaigns and proposals
+                    {user?.userType === 'brand' 
+                      ? 'Manage your campaigns and proposals' 
+                      : 'Manage your campaigns and proposals'
+                    }
                   </p>
                 </Link>
               </div>

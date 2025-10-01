@@ -61,12 +61,14 @@ export default function Dashboard() {
               Quick Actions
             </h3>
             <div className="space-y-2">
-              <Link
-                href="/marketplace"
-                className="block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-center"
-              >
-                Browse Campaigns
-              </Link>
+              {user.userType === 'influencer' && (
+                <Link
+                  href="/marketplace"
+                  className="block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-center"
+                >
+                  Browse Campaigns
+                </Link>
+              )}
               {user.userType === 'brand' && (
                 <>
                   <Link

@@ -2,14 +2,29 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Listing, marketplaceAPI } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Marketplace() {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { user, isAuthenticated } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
+    // Check authentication and user type
+    if (!isAuthenticated) {
+      router.push('/auth/login')
+      return
+    }
+
+    if (user?.userType === 'brand') {
+      router.push('/dashboard')
+      return
+    }
+
     const fetchListings = async () => {
       try {
         const data = await marketplaceAPI.getListings()
@@ -22,7 +37,7 @@ export default function Marketplace() {
     }
 
     fetchListings()
-  }, [])
+  }, [isAuthenticated, user, router])
 
   if (loading) {
     return (
