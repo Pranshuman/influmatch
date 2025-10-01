@@ -135,12 +135,8 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate }: {
             <>
               <button
                 onClick={() => {
-                  // Try to open in new window, but if it fails, open in same window
-                  const newWindow = window.open(`/proposals/${proposal.id}/chat`, '_blank')
-                  if (!newWindow) {
-                    // If popup was blocked, open in same window
-                    window.location.href = `/proposals/${proposal.id}/chat`
-                  }
+                  // Open chat in the same tab
+                  window.location.href = `/proposals/${proposal.id}/chat`
                 }}
                 className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
               >
