@@ -125,6 +125,15 @@ const ProposalCard = ({ proposal }: { proposal: Proposal }) => {
             Edit Proposal
           </button>
         )}
+        
+        {proposal.status === 'accepted' && (
+          <button
+            onClick={() => window.open(`/proposals/${proposal.id}/chat`, '_blank')}
+            className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium"
+          >
+            💬 Chat with Brand
+          </button>
+        )}
       </div>
     </div>
   )
