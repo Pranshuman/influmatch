@@ -53,6 +53,7 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
   router: any
 }) => {
   const [isUpdating, setIsUpdating] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
 
   const handleStatusUpdate = async (newStatus: string) => {
     try {
@@ -72,91 +73,107 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
   const canUpdateStatus = proposal.status === 'under_review' || proposal.status === 'accepted'
 
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-all duration-200">
-      <div className="flex justify-between items-start mb-6">
-        <div className="flex items-start space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+    <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 hover:shadow-lg transition-all duration-200">
+      {/* Compact View */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-4 flex-1">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
             {(proposal.influencer?.name || 'U').charAt(0).toUpperCase()}
           </div>
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-1">
+          <div className="flex-1 min-w-0">
+            <h4 className="text-base font-semibold text-gray-900 truncate">
               {proposal.influencer?.name || 'Unknown Influencer'}
             </h4>
-            <p className="text-sm text-gray-600">
-              {proposal.influencer?.bio || 'No bio available'}
+            <p className="text-sm text-gray-600 truncate">
+              ${proposal.proposedBudget?.toLocaleString() || '0'} • {proposal.timeline || 'No timeline'}
             </p>
           </div>
-        </div>
-        <StatusBadge status={proposal.status} />
-      </div>
-
-      <div className="space-y-4 mb-6">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <p className="text-sm text-gray-600 mb-2 font-medium">💬 Proposal Message:</p>
-          <p className="text-gray-900 leading-relaxed">{proposal.message}</p>
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-green-50 rounded-lg p-3">
-            <p className="text-sm text-gray-600 mb-1">💰 Proposed Budget:</p>
-            <p className="font-bold text-green-600 text-lg">
-              ${proposal.proposedBudget?.toLocaleString() || '0'}
-            </p>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-3">
-            <p className="text-sm text-gray-600 mb-1">⏰ Timeline:</p>
-            <p className="font-semibold text-blue-600">{proposal.timeline || 'Not specified'}</p>
-          </div>
-        </div>
-
-        <div className="bg-purple-50 rounded-lg p-3">
-          <p className="text-sm text-gray-600 mb-1">📅 Submitted:</p>
-          <p className="text-sm font-medium text-purple-600">
-            {new Date(proposal.createdAt).toLocaleDateString()}
-          </p>
+        <div className="flex items-center space-x-3">
+          <StatusBadge status={proposal.status} />
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+          >
+            {showDetails ? 'Hide Details' : 'View Details'}
+          </button>
         </div>
       </div>
 
+      {/* Expandable Details */}
+      {showDetails && (
+        <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-sm text-gray-600 mb-2 font-medium">💬 Proposal Message:</p>
+            <p className="text-gray-900 leading-relaxed">{proposal.message}</p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-50 rounded-lg p-3">
+              <p className="text-sm text-gray-600 mb-1">💰 Proposed Budget:</p>
+              <p className="font-bold text-green-600 text-lg">
+                ${proposal.proposedBudget?.toLocaleString() || '0'}
+              </p>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3">
+              <p className="text-sm text-gray-600 mb-1">⏰ Timeline:</p>
+              <p className="font-semibold text-blue-600">{proposal.timeline || 'Not specified'}</p>
+            </div>
+          </div>
+
+          <div className="bg-purple-50 rounded-lg p-3">
+            <p className="text-sm text-gray-600 mb-1">📅 Submitted:</p>
+            <p className="text-sm font-medium text-purple-600">
+              {new Date(proposal.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Action Buttons */}
       {canUpdateStatus && (
-        <div className="flex gap-2">
-          {proposal.status === 'under_review' && (
-            <>
-              <button
-                onClick={() => handleStatusUpdate('accepted')}
-                disabled={isUpdating}
-                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-              >
-                {isUpdating ? 'Updating...' : 'Accept'}
-              </button>
-              <button
-                onClick={() => handleStatusUpdate('rejected')}
-                disabled={isUpdating}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-              >
-                {isUpdating ? 'Updating...' : 'Reject'}
-              </button>
-            </>
-          )}
-          {proposal.status === 'accepted' && (
-            <>
-              <button
-                onClick={() => {
-                  // Navigate to chat in the same tab using Next.js router
-                  router.push(`/proposals/${proposal.id}/chat`)
-                }}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                Chat
-              </button>
-              <button
-                onClick={() => handleStatusUpdate('withdrawn')}
-                disabled={isUpdating}
-                className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-              >
-                {isUpdating ? 'Updating...' : 'Withdraw'}
-              </button>
-            </>
-          )}
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="flex gap-2">
+            {proposal.status === 'under_review' && (
+              <>
+                <button
+                  onClick={() => handleStatusUpdate('accepted')}
+                  disabled={isUpdating}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-2 rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                >
+                  {isUpdating ? 'Updating...' : '✅ Accept'}
+                </button>
+                <button
+                  onClick={() => handleStatusUpdate('rejected')}
+                  disabled={isUpdating}
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-2 rounded-lg hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                >
+                  {isUpdating ? 'Updating...' : '❌ Reject'}
+                </button>
+              </>
+            )}
+            {proposal.status === 'accepted' && (
+              <>
+                <button
+                  onClick={() => {
+                    // Navigate to chat in the same tab using Next.js router
+                    router.push(`/proposals/${proposal.id}/chat`)
+                  }}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-2 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                >
+                  💬 Chat
+                </button>
+                <button
+                  onClick={() => handleStatusUpdate('withdrawn')}
+                  disabled={isUpdating}
+                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-3 py-2 rounded-lg hover:from-gray-700 hover:to-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                >
+                  {isUpdating ? 'Updating...' : '↩️ Withdraw'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -283,15 +300,35 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
         </div>
       ) : (
         <div className="space-y-4">
-          <h4 className="text-lg font-medium text-gray-900">Proposals</h4>
-          {proposals.map((proposal) => (
-            <ProposalManagementCard
-              key={proposal.id}
-              proposal={proposal}
-              onStatusUpdate={handleProposalStatusUpdate}
-              router={router}
-            />
-          ))}
+          <div className="flex justify-between items-center">
+            <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+              <span className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                <span className="text-blue-600 text-sm">📝</span>
+              </span>
+              Proposals ({proposals.length})
+            </h4>
+            <div className="flex space-x-2 text-sm">
+              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                {statusCounts.under_review} Under Review
+              </span>
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                {statusCounts.accepted} Accepted
+              </span>
+              <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                {statusCounts.rejected} Rejected
+              </span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {proposals.map((proposal) => (
+              <ProposalManagementCard
+                key={proposal.id}
+                proposal={proposal}
+                onStatusUpdate={handleProposalStatusUpdate}
+                router={router}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
