@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { marketplaceAPI } from '@/lib/api'
 import { Proposal, Listing, Message } from '@/lib/api'
@@ -22,6 +22,7 @@ export default function ProposalChatPage({ params }: { params: Promise<{ id: str
   const [error, setError] = useState<string | null>(null)
   const [newMessage, setNewMessage] = useState('')
   const [conversationId, setConversationId] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Wait for authentication to finish loading
@@ -45,10 +46,19 @@ export default function ProposalChatPage({ params }: { params: Promise<{ id: str
       setLoading(true)
       setError(null)
       
+      console.log('Fetching chat data for proposal:', proposalId)
       const data = await marketplaceAPI.getProposalChat(parseInt(proposalId))
+      
+      console.log('Chat data received:', {
+        proposal: data.proposal?.id,
+        listing: data.listing?.id,
+        messagesCount: data.messages?.length || 0,
+        conversationId: data.conversationId
+      })
+      
       setProposal(data.proposal)
       setListing(data.listing)
-      setMessages(data.messages)
+      setMessages(data.messages || [])
       setConversationId(data.conversationId)
     } catch (err: any) {
       console.error('Error fetching chat data:', err)
@@ -62,23 +72,51 @@ export default function ProposalChatPage({ params }: { params: Promise<{ id: str
     e.preventDefault()
     if (!newMessage.trim() || !conversationId) return
 
+    const messageContent = newMessage.trim()
     setSending(true)
+    
+    // Optimistically add message to UI immediately
+    const tempMessage = {
+      id: Date.now(), // Temporary ID
+      content: messageContent,
+      senderId: user?.id || 0,
+      recipientId: 0, // Will be updated when real message comes back
+      conversationId,
+      proposalId: parseInt(proposalId),
+      createdAt: new Date().toISOString(),
+      sender: user
+    }
+    
+    setMessages(prev => [...prev, tempMessage])
+    setNewMessage('')
+    
     try {
-      await marketplaceAPI.sendMessage({
-        content: newMessage.trim(),
+      const response = await marketplaceAPI.sendMessage({
+        content: messageContent,
         proposalId: parseInt(proposalId),
         conversationId
       })
       
-      setNewMessage('')
-      fetchChatData() // Refresh messages
+      // Replace temp message with real message
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempMessage.id ? response.message : msg
+      ))
+      
     } catch (err: any) {
       console.error('Error sending message:', err)
+      // Remove the optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id))
+      setNewMessage(messageContent) // Restore the message
       alert(`Failed to send message: ${err.message}`)
     } finally {
       setSending(false)
     }
   }
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString([], { 
@@ -217,6 +255,7 @@ export default function ProposalChatPage({ params }: { params: Promise<{ id: str
                   </div>
                 ))
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}

@@ -1004,8 +1004,9 @@ app.post('/api/proposals/:id/start-chat', authenticateToken, async (req, res) =>
       return res.status(503).json({ error: 'Database unavailable' })
     }
 
-    if (req.user.userType !== 'brand') {
-      return res.status(403).json({ error: 'Only brands can start proposal chats' })
+    // Allow both brands and influencers to start chats
+    if (req.user.userType !== 'brand' && req.user.userType !== 'influencer') {
+      return res.status(403).json({ error: 'Only brands and influencers can start proposal chats' })
     }
 
     const proposalId = parseInt(req.params.id)
@@ -1028,8 +1029,13 @@ app.post('/api/proposals/:id/start-chat', authenticateToken, async (req, res) =>
     }
 
     const listing = listings[0]
-    if (listing.brandId !== req.user.userId) {
-      return res.status(403).json({ error: 'You can only start chats for your own campaign proposals' })
+    
+    // Check if user has permission to start chat for this proposal
+    const isBrandOwner = req.user.userType === 'brand' && req.user.userId === listing.brandId
+    const isInfluencerOwner = req.user.userType === 'influencer' && req.user.userId === proposal.influencerId
+    
+    if (!isBrandOwner && !isInfluencerOwner) {
+      return res.status(403).json({ error: 'You can only start chats for your own proposals' })
     }
 
     // Check if proposal is accepted
