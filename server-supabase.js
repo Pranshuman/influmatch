@@ -676,6 +676,94 @@ app.put('/api/proposals/:id/status', authenticateToken, async (req, res) => {
   }
 })
 
+// PUT update proposal (for editing by influencer)
+app.put('/api/proposals/:id', authenticateToken, async (req, res) => {
+  try {
+    console.log('[UPDATE_PROPOSAL] Updating proposal:', req.params.id)
+    
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
+    }
+
+    if (req.user.userType !== 'influencer') {
+      return res.status(403).json({ error: 'Only influencers can edit proposals' })
+    }
+
+    const { message, proposedBudget, timeline } = req.body
+    const proposalId = parseInt(req.params.id)
+
+    // Validate required fields
+    if (!message || !proposedBudget) {
+      return res.status(400).json({ error: 'Missing required fields: message and proposedBudget are required' })
+    }
+
+    if (isNaN(proposalId)) {
+      return res.status(400).json({ error: 'Invalid proposal ID' })
+    }
+
+    // Get the proposal to check ownership and status
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+    
+    // Check if user is the influencer who created the proposal
+    if (req.user.userId !== proposal.influencerId) {
+      return res.status(403).json({ error: 'Access denied. Only the proposal creator can edit it.' })
+    }
+
+    // Check if proposal can be edited (only if status is under_review)
+    if (proposal.status !== 'under_review') {
+      return res.status(400).json({ 
+        error: 'Proposal cannot be edited. Only proposals with "under_review" status can be modified.' 
+      })
+    }
+
+    // Update proposal
+    const updateData = {
+      message,
+      proposedBudget: parseInt(proposedBudget),
+      updatedAt: new Date().toISOString()
+    }
+    
+    // Add timeline if provided
+    if (timeline) {
+      updateData.timeline = timeline
+    }
+
+    const updatedProposals = await safeSupabaseQuery('proposals', 'update', updateData, { id: proposalId })
+    
+    if (!updatedProposals || updatedProposals.length === 0) {
+      return res.status(500).json({ error: 'Failed to update proposal' })
+    }
+
+    const updatedProposal = updatedProposals[0]
+    
+    // Get influencer details
+    const influencer = await safeSupabaseQuery('users', 'select', null, { id: updatedProposal.influencerId })
+    
+    res.json({
+      message: 'Proposal updated successfully',
+      proposal: {
+        ...updatedProposal,
+        influencer: influencer && influencer.length > 0 ? influencer[0] : null
+      }
+    })
+  } catch (error) {
+    console.error('[UPDATE_PROPOSAL] Error:', error)
+    console.error('[UPDATE_PROPOSAL] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      proposalId: req.params.id,
+      userId: req.user?.userId,
+      userType: req.user?.userType
+    })
+    res.status(500).json({ error: 'Failed to update proposal' })
+  }
+})
+
 // ---- Users Routes ----
 // GET user profile
 app.get('/api/users/:id', authenticateToken, async (req, res) => {
