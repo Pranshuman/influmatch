@@ -159,9 +159,10 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
 }
 
 // Campaign card component
-const CampaignCard = ({ listing, onProposalUpdate }: { 
+const CampaignCard = ({ listing, onProposalUpdate, router }: { 
   listing: Listing, 
-  onProposalUpdate: (listingId: number, proposalId: number, status: string) => void 
+  onProposalUpdate: (listingId: number, proposalId: number, status: string) => void,
+  router: any
 }) => {
   const [proposals, setProposals] = useState<Proposal[]>([])
   const [loading, setLoading] = useState(false)
@@ -398,6 +399,7 @@ export default function CampaignManagementPage() {
                 key={listing.id}
                 listing={listing}
                 onProposalUpdate={handleProposalUpdate}
+                router={router}
               />
             ))}
           </div>
