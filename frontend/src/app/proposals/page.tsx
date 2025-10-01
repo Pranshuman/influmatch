@@ -129,8 +129,8 @@ const ProposalCard = ({ proposal }: { proposal: Proposal }) => {
         {proposal.status === 'accepted' && (
           <button
             onClick={() => {
-              // Open chat in the same tab
-              window.location.href = `/proposals/${proposal.id}/chat`
+              // Navigate to chat in the same tab using Next.js router
+              router.push(`/proposals/${proposal.id}/chat`)
             }}
             className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors text-sm font-medium"
           >
