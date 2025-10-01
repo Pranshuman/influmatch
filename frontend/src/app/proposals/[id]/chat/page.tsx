@@ -9,7 +9,7 @@ import Link from 'next/link'
 
 export default function ProposalChatPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const params_hook = useParams()
   const proposalId = params_hook.id as string
@@ -24,13 +24,21 @@ export default function ProposalChatPage({ params }: { params: Promise<{ id: str
   const [conversationId, setConversationId] = useState<string | null>(null)
 
   useEffect(() => {
+    // Wait for authentication to finish loading
+    if (isLoading) {
+      console.log('Authentication still loading...')
+      return
+    }
+
     if (!isAuthenticated) {
+      console.log('Not authenticated, redirecting to login')
       router.push('/auth/login')
       return
     }
 
+    console.log('Authentication complete, fetching chat data...')
     fetchChatData()
-  }, [isAuthenticated, router, proposalId])
+  }, [isAuthenticated, isLoading, router, proposalId])
 
   const fetchChatData = async () => {
     try {
@@ -79,12 +87,14 @@ export default function ProposalChatPage({ params }: { params: Promise<{ id: str
     })
   }
 
-  if (loading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading chat...</p>
+          <p className="text-gray-600">
+            {isLoading ? 'Checking authentication...' : 'Loading chat...'}
+          </p>
         </div>
       </div>
     )
