@@ -94,7 +94,7 @@ export async function safeSupabaseQuery(table, operation, data = null, filters =
         Object.entries(filters).forEach(([key, value]) => {
           updateQuery = updateQuery.eq(key, value);
         });
-        result = await updateQuery;
+        result = await updateQuery.select();
         break;
         
       case 'delete':

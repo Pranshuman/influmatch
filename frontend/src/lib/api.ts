@@ -220,8 +220,15 @@ class MarketplaceAPI {
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Failed to submit proposal')
+      let errorMessage = 'Failed to submit proposal'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
     }
 
     return response.json()
@@ -316,8 +323,15 @@ class MarketplaceAPI {
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Failed to update proposal status')
+      let errorMessage = 'Failed to update proposal status'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
     }
 
     return response.json()

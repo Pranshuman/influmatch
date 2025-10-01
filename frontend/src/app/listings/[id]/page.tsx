@@ -4,38 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { marketplaceAPI } from '@/lib/api'
-
-interface Listing {
-  id: string
-  title: string
-  description: string
-  budget: number
-  category: string
-  brandId: string
-  brandName: string
-  createdAt: string
-  status: string
-  requirements?: string
-  deliverables?: string
-  timeline?: string
-}
-
-interface Proposal {
-  id: number
-  influencerId: number
-  influencerName: string
-  message: string
-  proposedBudget: number
-  status: string
-  createdAt: string
-  influencer?: {
-    id: number
-    name: string
-    bio?: string
-    website?: string
-  }
-}
+import { marketplaceAPI, Listing, Proposal } from '@/lib/api'
 
 export default function ListingDetails({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -49,6 +18,8 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
     proposedBudget: ''
   })
   const [submittingProposal, setSubmittingProposal] = useState(false)
+  const [proposalError, setProposalError] = useState('')
+  const [userProposal, setUserProposal] = useState<Proposal | null>(null)
   
   const { user, isAuthenticated } = useAuth()
   const router = useRouter()
@@ -80,9 +51,16 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
       const data = await marketplaceAPI.getProposalsForListing(resolvedParams.id)
       console.log('✅ Proposals fetched successfully:', data.proposals.length, 'proposals')
       setProposals(data.proposals || [])
+      
+      // Check if current user has a proposal for this listing
+      if (user && user.userType === 'influencer') {
+        const userProposal = data.proposals.find(p => p.influencerId === user.id)
+        setUserProposal(userProposal || null)
+      }
     } catch (err: any) {
       console.error('❌ Error fetching proposals:', err)
       setProposals([])
+      setUserProposal(null)
     }
   }
 
@@ -94,6 +72,8 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
     }
 
     setSubmittingProposal(true)
+    setProposalError('')
+    
     try {
       const result = await marketplaceAPI.submitProposal(resolvedParams.id, {
         message: proposalData.message,
@@ -103,11 +83,21 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
       if (result.proposal) {
         setShowProposalForm(false)
         setProposalData({ message: '', proposedBudget: '' })
+        setProposalError('')
         fetchProposals() // Refresh proposals
-        alert('Proposal submitted successfully!')
+        // Show success message instead of alert
+        setProposalError('success:Proposal submitted successfully!')
+        setTimeout(() => setProposalError(''), 3000)
       }
     } catch (err: any) {
-      alert(`Error submitting proposal: ${err.message || 'Unknown error'}`)
+      console.error('Proposal submission error:', err)
+      
+      // Handle specific error cases
+      if (err.message && err.message.includes('already submitted')) {
+        setProposalError('You have already submitted a proposal for this campaign. You can edit your existing proposal instead.')
+      } else {
+        setProposalError(`Error submitting proposal: ${err.message || 'Unknown error'}`)
+      }
     } finally {
       setSubmittingProposal(false)
     }
@@ -141,8 +131,9 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
     )
   }
 
-  const canSubmitProposal = isAuthenticated && user?.userType === 'influencer' && (listing.status === 'active' || listing.status === null || listing.status === undefined)
+  const canSubmitProposal = isAuthenticated && user?.userType === 'influencer' && (listing.status === 'active' || listing.status === null || listing.status === undefined) && !userProposal
   const isBrandOwner = isAuthenticated && user?.userType === 'brand' && user?.id === Number(listing.brandId)
+  const hasExistingProposal = userProposal !== null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -194,10 +185,10 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
-                {listing.timeline && (
+                {listing.deadline && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Timeline</h3>
-                    <p className="text-gray-700">{listing.timeline}</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Deadline</h3>
+                    <p className="text-gray-700">{new Date(listing.deadline).toLocaleDateString()}</p>
                   </div>
                 )}
               </div>
@@ -216,7 +207,7 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                       {proposals.map((proposal) => (
                         <div key={proposal.id} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-semibold text-gray-900">{proposal.influencerName}</h4>
+                            <h4 className="font-semibold text-gray-900">{proposal.influencer?.name || 'Unknown'}</h4>
                             <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                               {proposal.status}
                             </span>
@@ -253,6 +244,54 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                     <span className="font-medium">{listing.status}</span>
                   </div>
                 </div>
+
+                {/* Show proposal error/success message */}
+                {proposalError && (
+                  <div className={`mb-4 p-3 rounded-lg ${
+                    proposalError.startsWith('success:') 
+                      ? 'bg-green-100 text-green-800 border border-green-200' 
+                      : 'bg-red-100 text-red-800 border border-red-200'
+                  }`}>
+                    {proposalError.startsWith('success:') ? proposalError.substring(8) : proposalError}
+                  </div>
+                )}
+
+                {/* Show existing proposal status */}
+                {hasExistingProposal && userProposal && (
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2">Your Proposal Status</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-700">Status:</span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          userProposal.status === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
+                          userProposal.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                          userProposal.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {userProposal.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-700">Your Rate:</span>
+                        <span className="font-medium text-blue-900">${userProposal.proposedBudget?.toLocaleString() || '0'}</span>
+                      </div>
+                      <div className="text-sm text-blue-600">
+                        Submitted: {new Date(userProposal.createdAt).toLocaleDateString()}
+                      </div>
+                      {userProposal.status === 'under_review' && (
+                        <div className="pt-2">
+                          <Link
+                            href={`/proposals/edit/${userProposal.id}`}
+                            className="text-blue-600 hover:text-blue-800 text-sm underline"
+                          >
+                            Edit your proposal
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {canSubmitProposal && (
                   <div>
@@ -303,13 +342,31 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                           </button>
                           <button
                             type="button"
-                            onClick={() => setShowProposalForm(false)}
+                            onClick={() => {
+                              setShowProposalForm(false)
+                              setProposalError('')
+                            }}
                             className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
                           >
                             Cancel
                           </button>
                         </div>
                       </form>
+                    )}
+                  </div>
+                )}
+
+                {/* Show message when user already has a proposal */}
+                {hasExistingProposal && !canSubmitProposal && user?.userType === 'influencer' && (
+                  <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-gray-600 mb-2">You have already submitted a proposal for this campaign.</p>
+                    {userProposal?.status === 'under_review' && (
+                      <Link
+                        href={`/proposals/edit/${userProposal.id}`}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Edit your proposal
+                      </Link>
                     )}
                   </div>
                 )}

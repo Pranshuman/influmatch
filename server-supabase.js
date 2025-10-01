@@ -659,11 +659,19 @@ app.put('/api/proposals/:id/status', authenticateToken, async (req, res) => {
       message: 'Proposal status updated successfully',
       proposal: {
         ...updatedProposal,
-        influencer: influencer[0] || null
+        influencer: influencer && influencer.length > 0 ? influencer[0] : null
       }
     })
   } catch (error) {
     console.error('[UPDATE_PROPOSAL_STATUS] Error:', error)
+    console.error('[UPDATE_PROPOSAL_STATUS] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      proposalId: req.params.id,
+      status: req.body.status,
+      userId: req.user?.userId,
+      userType: req.user?.userType
+    })
     res.status(500).json({ error: 'Failed to update proposal status' })
   }
 })

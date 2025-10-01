@@ -56,11 +56,13 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate }: {
   const handleStatusUpdate = async (newStatus: string) => {
     try {
       setIsUpdating(true)
-      await marketplaceAPI.updateProposalStatus(proposal.id, newStatus as any)
+      const result = await marketplaceAPI.updateProposalStatus(proposal.id, newStatus as any)
+      console.log('Proposal status updated successfully:', result)
       onStatusUpdate(proposal.id, newStatus)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating proposal status:', error)
-      alert('Failed to update proposal status. Please try again.')
+      const errorMessage = error.message || 'Failed to update proposal status. Please try again.'
+      alert(`Error: ${errorMessage}`)
     } finally {
       setIsUpdating(false)
     }
