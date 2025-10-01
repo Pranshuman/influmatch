@@ -43,7 +43,6 @@ export default function CreateCampaign() {
       } else {
         console.log('✅ Authentication successful - user can create campaigns')
       }
-      
       setAuthChecked(true)
     }
   }, [authLoading, isAuthenticated, user, router])

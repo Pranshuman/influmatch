@@ -68,82 +68,94 @@ export default function Marketplace() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Campaign Marketplace
-            </h1>
-            <p className="text-gray-600">
-              Discover exciting collaboration opportunities
-            </p>
+        {/* Header Section */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                Campaign Marketplace 🚀
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Discover exciting collaboration opportunities from top brands
+              </p>
+            </div>
+            <Link
+              href="/dashboard"
+              className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 px-6 py-3 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+            >
+              ← Back to Dashboard
+            </Link>
           </div>
-          <Link
-            href="/"
-            className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-          >
-            ← Back to Home
-          </Link>
         </div>
 
         {listings.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
-              No campaigns available
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
+            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-4xl">🎯</span>
+            </div>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+              No campaigns available yet
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-8 text-lg">
               Be the first to create a campaign and start connecting with influencers!
             </p>
             <Link
               href="/campaigns/create"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
             >
-              Create Campaign
+              <span className="mr-2">✨</span>
+              Create First Campaign
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {listings.map((listing) => (
-              <div key={listing.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+              <div key={listing.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-200 group">
+                {/* Header with Status */}
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                    {listing.title}
-                  </h3>
-                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                    {listing.status}
-                  </span>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      {listing.title}
+                    </h3>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      {listing.status}
+                    </span>
+                  </div>
                 </div>
                 
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                {/* Description */}
+                <p className="text-gray-600 text-sm mb-6 line-clamp-3 leading-relaxed">
                   {listing.description}
                 </p>
                 
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Budget:</span>
-                    <span className="font-semibold text-green-600">
+                {/* Details Grid */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl">
+                    <span className="text-sm text-gray-600">💰 Budget</span>
+                    <span className="font-bold text-green-600 text-lg">
                       ${listing.budget.toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Category:</span>
-                    <span className="font-medium">{listing.category}</span>
+                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl">
+                    <span className="text-sm text-gray-600">🏷️ Category</span>
+                    <span className="font-medium text-blue-600 capitalize">{listing.category}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Brand:</span>
-                    <span className="font-medium">{listing.brandName}</span>
+                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded-xl">
+                    <span className="text-sm text-gray-600">🏢 Brand</span>
+                    <span className="font-medium text-purple-600">{listing.brandName}</span>
                   </div>
                 </div>
                 
-                <div className="flex space-x-2">
-                  <Link
-                    href={`/listings/${listing.id}`}
-                    className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    View Details
-                  </Link>
-                </div>
+                {/* Action Button */}
+                <Link
+                  href={`/listings/${listing.id}`}
+                  className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center py-3 px-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-md hover:shadow-lg group-hover:scale-105 transform"
+                >
+                  View Details & Apply
+                </Link>
               </div>
             ))}
           </div>
