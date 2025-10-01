@@ -47,9 +47,10 @@ const StatusBadge = ({ status }: { status: string }) => {
 }
 
 // Proposal management card component
-const ProposalManagementCard = ({ proposal, onStatusUpdate }: { 
+const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: { 
   proposal: Proposal, 
-  onStatusUpdate: (proposalId: number, status: string) => void 
+  onStatusUpdate: (proposalId: number, status: string) => void,
+  router: any
 }) => {
   const [isUpdating, setIsUpdating] = useState(false)
 
@@ -274,6 +275,7 @@ const CampaignCard = ({ listing, onProposalUpdate }: {
               key={proposal.id}
               proposal={proposal}
               onStatusUpdate={handleProposalStatusUpdate}
+              router={router}
             />
           ))}
         </div>
