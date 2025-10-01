@@ -35,8 +35,13 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Allow the specific Vercel domain
+    // Allow the specific Vercel domains
     if (origin === 'https://frontend-sage-theta.vercel.app') {
+      return callback(null, true);
+    }
+    
+    // Allow the current frontend domain
+    if (origin === 'https://frontend-4fhtc80xy-prash123s-projects.vercel.app') {
       return callback(null, true);
     }
     
