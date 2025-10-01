@@ -151,7 +151,7 @@ export default function MyProposalsPage() {
 
   useEffect(() => {
     if (!isAuthenticated || user?.userType !== 'influencer') {
-      router.push('/auth/login')
+      router?.push('/auth/login')
       return
     }
 
@@ -314,7 +314,7 @@ export default function MyProposalsPage() {
               Start by browsing campaigns and submitting your first proposal!
             </p>
             <button
-              onClick={() => router.push('/marketplace')}
+              onClick={() => router?.push('/marketplace')}
               className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors font-medium"
             >
               Browse Campaigns
