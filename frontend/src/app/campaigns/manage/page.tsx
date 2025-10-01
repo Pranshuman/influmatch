@@ -72,41 +72,46 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
   const canUpdateStatus = proposal.status === 'under_review' || proposal.status === 'accepted'
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h4 className="text-lg font-semibold text-gray-900 mb-1">
-            {proposal.influencer?.name || 'Unknown Influencer'}
-          </h4>
-          <p className="text-sm text-gray-600">
-            {proposal.influencer?.bio || 'No bio available'}
-          </p>
+    <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-all duration-200">
+      <div className="flex justify-between items-start mb-6">
+        <div className="flex items-start space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+            {(proposal.influencer?.name || 'U').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-1">
+              {proposal.influencer?.name || 'Unknown Influencer'}
+            </h4>
+            <p className="text-sm text-gray-600">
+              {proposal.influencer?.bio || 'No bio available'}
+            </p>
+          </div>
         </div>
         <StatusBadge status={proposal.status} />
       </div>
 
-      <div className="space-y-3 mb-4">
-        <div>
-          <p className="text-sm text-gray-600 mb-1">Proposal Message:</p>
-          <p className="text-gray-900">{proposal.message}</p>
+      <div className="space-y-4 mb-6">
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="text-sm text-gray-600 mb-2 font-medium">💬 Proposal Message:</p>
+          <p className="text-gray-900 leading-relaxed">{proposal.message}</p>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">Proposed Budget:</p>
-            <p className="font-semibold text-green-600">
+          <div className="bg-green-50 rounded-lg p-3">
+            <p className="text-sm text-gray-600 mb-1">💰 Proposed Budget:</p>
+            <p className="font-bold text-green-600 text-lg">
               ${proposal.proposedBudget?.toLocaleString() || '0'}
             </p>
           </div>
-          <div>
-            <p className="text-sm text-gray-600">Timeline:</p>
-            <p className="font-semibold">{proposal.timeline || 'Not specified'}</p>
+          <div className="bg-blue-50 rounded-lg p-3">
+            <p className="text-sm text-gray-600 mb-1">⏰ Timeline:</p>
+            <p className="font-semibold text-blue-600">{proposal.timeline || 'Not specified'}</p>
           </div>
         </div>
 
-        <div>
-          <p className="text-sm text-gray-600">Submitted:</p>
-          <p className="text-sm">
+        <div className="bg-purple-50 rounded-lg p-3">
+          <p className="text-sm text-gray-600 mb-1">📅 Submitted:</p>
+          <p className="text-sm font-medium text-purple-600">
             {new Date(proposal.createdAt).toLocaleDateString()}
           </p>
         </div>
@@ -215,31 +220,39 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
   const statusCounts = getStatusCounts()
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          {listing.title}
-        </h3>
-        <p className="text-gray-600 mb-4">{listing.description}</p>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <div className="text-center">
-            <p className="text-sm text-gray-600">Budget</p>
-            <p className="font-semibold">${listing.budget?.toLocaleString() || '0'}</p>
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-200">
+      <div className="mb-8">
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+              {listing.title}
+            </h3>
+            <p className="text-gray-600 mb-6 leading-relaxed">{listing.description}</p>
           </div>
-          <div className="text-center">
-            <p className="text-sm text-gray-600">Deadline</p>
-            <p className="font-semibold">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+            {listing.status}
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+          <div className="bg-green-50 rounded-xl p-4 text-center">
+            <p className="text-sm text-gray-600 mb-1">💰 Budget</p>
+            <p className="font-bold text-green-600 text-lg">${listing.budget?.toLocaleString() || '0'}</p>
+          </div>
+          <div className="bg-blue-50 rounded-xl p-4 text-center">
+            <p className="text-sm text-gray-600 mb-1">📅 Deadline</p>
+            <p className="font-semibold text-blue-600">
               {listing.deadline ? new Date(listing.deadline).toLocaleDateString() : 'Not set'}
             </p>
           </div>
-          <div className="text-center">
-            <p className="text-sm text-gray-600">Total Proposals</p>
-            <p className="font-semibold">{proposals.length}</p>
+          <div className="bg-purple-50 rounded-xl p-4 text-center">
+            <p className="text-sm text-gray-600 mb-1">📝 Total Proposals</p>
+            <p className="font-semibold text-purple-600 text-lg">{proposals.length}</p>
           </div>
-          <div className="text-center">
-            <p className="text-sm text-gray-600">Accepted</p>
-            <p className="font-semibold text-green-600">{statusCounts.accepted}</p>
+          <div className="bg-orange-50 rounded-xl p-4 text-center">
+            <p className="text-sm text-gray-600 mb-1">✅ Accepted</p>
+            <p className="font-semibold text-orange-600 text-lg">{statusCounts.accepted}</p>
           </div>
         </div>
       </div>
@@ -355,41 +368,46 @@ export default function CampaignManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Campaigns</h1>
-            <p className="text-gray-600">
-              Review and manage proposals for your campaigns
-            </p>
+        {/* Header Section */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                Manage Campaigns 📊
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Review and manage proposals for your campaigns
+              </p>
+            </div>
+            <Link
+              href="/dashboard"
+              className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 px-6 py-3 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+            >
+              ← Back to Dashboard
+            </Link>
           </div>
-          <Link
-            href="/dashboard"
-            className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-          >
-            ← Back to Dashboard
-          </Link>
         </div>
 
         {/* Campaigns List */}
         {listings.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
+            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-4xl">📈</span>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+              No campaigns yet
+            </h3>
+            <p className="text-gray-600 mb-8 text-lg">
               Create your first campaign to start receiving proposals from influencers!
             </p>
             <button
               onClick={() => router.push('/campaigns/create')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors font-medium"
+              className="inline-flex items-center bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
             >
-              Create Campaign
+              <span className="mr-2">✨</span>
+              Create Your First Campaign
             </button>
           </div>
         ) : (

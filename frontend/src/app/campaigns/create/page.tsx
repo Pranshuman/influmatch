@@ -107,183 +107,250 @@ export default function CreateCampaign() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Create New Campaign
-              </h1>
-              <p className="text-gray-600">
-                Post a campaign to connect with influencers
-              </p>
+        <div className="max-w-4xl mx-auto">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                  Create New Campaign ✨
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  Launch a campaign to connect with amazing influencers
+                </p>
+              </div>
+              <Link
+                href="/dashboard"
+                className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 px-6 py-3 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+              >
+                ← Back to Dashboard
+              </Link>
             </div>
-            <Link
-              href="/dashboard"
-              className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              ← Back to Dashboard
-            </Link>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Campaign Form */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                  {error}
+                <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-xl flex items-center">
+                  <span className="mr-3 text-xl">⚠️</span>
+                  <div>
+                    <p className="font-medium">Error creating campaign</p>
+                    <p className="text-sm">{error}</p>
+                  </div>
                 </div>
               )}
 
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  Campaign Title *
-                </label>
-                <input
-                  id="title"
-                  name="title"
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Summer Fashion Campaign"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                  Description *
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={4}
-                  required
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Describe your campaign goals and what you're looking for..."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
-                    Budget ($) *
-                  </label>
-                  <input
-                    id="budget"
-                    name="budget"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    required
-                    value={formData.budget}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="1000"
-                  />
+              {/* Basic Information Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-blue-600 font-bold">1</span>
+                    </span>
+                    Basic Information
+                  </h3>
                 </div>
 
                 <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                    Category *
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="lifestyle">Lifestyle</option>
-                    <option value="fashion">Fashion</option>
-                    <option value="beauty">Beauty</option>
-                    <option value="fitness">Fitness</option>
-                    <option value="food">Food</option>
-                    <option value="travel">Travel</option>
-                    <option value="technology">Technology</option>
-                    <option value="business">Business</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-2">
-                  Requirements
-                </label>
-                <textarea
-                  id="requirements"
-                  name="requirements"
-                  rows={3}
-                  value={formData.requirements}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Minimum 10k followers, specific age range, location requirements..."
-                />
-              </div>
-
-              <div>
-                <label htmlFor="deliverables" className="block text-sm font-medium text-gray-700 mb-2">
-                  Expected Deliverables
-                </label>
-                <textarea
-                  id="deliverables"
-                  name="deliverables"
-                  rows={3}
-                  value={formData.deliverables}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., 3 Instagram posts, 5 Instagram stories, 1 TikTok video..."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-2">
-                    Deadline *
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-3">
+                    Campaign Title *
                   </label>
                   <input
-                    id="deadline"
-                    name="deadline"
-                    type="datetime-local"
-                    required
-                    value={formData.deadline}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    min={new Date().toISOString().slice(0, 16)}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="timeline" className="block text-sm font-medium text-gray-700 mb-2">
-                    Timeline
-                  </label>
-                  <input
-                    id="timeline"
-                    name="timeline"
+                    id="title"
+                    name="title"
                     type="text"
-                    value={formData.timeline}
+                    required
+                    value={formData.title}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., 2 weeks from start date"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="e.g., Summer Fashion Campaign 2024"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-3">
+                    Campaign Description *
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={4}
+                    required
+                    value={formData.description}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Describe your campaign goals, target audience, and what you're looking for in influencers..."
                   />
                 </div>
               </div>
 
-              <div className="flex space-x-4">
+              {/* Budget & Category Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-green-600 font-bold">2</span>
+                    </span>
+                    Budget & Category
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-3">
+                      Budget ($) *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                      <input
+                        id="budget"
+                        name="budget"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        required
+                        value={formData.budget}
+                        onChange={handleChange}
+                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="1000"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-3">
+                      Category *
+                    </label>
+                    <select
+                      id="category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    >
+                      <option value="lifestyle">🌟 Lifestyle</option>
+                      <option value="fashion">👗 Fashion</option>
+                      <option value="beauty">💄 Beauty</option>
+                      <option value="fitness">💪 Fitness</option>
+                      <option value="food">🍕 Food</option>
+                      <option value="travel">✈️ Travel</option>
+                      <option value="technology">💻 Technology</option>
+                      <option value="business">💼 Business</option>
+                      <option value="other">🔖 Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Requirements & Deliverables Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-purple-600 font-bold">3</span>
+                    </span>
+                    Requirements & Deliverables
+                  </h3>
+                </div>
+
+                <div>
+                  <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-3">
+                    Influencer Requirements
+                  </label>
+                  <textarea
+                    id="requirements"
+                    name="requirements"
+                    rows={3}
+                    value={formData.requirements}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="e.g., Minimum 10k followers, specific age range, location requirements, engagement rate..."
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="deliverables" className="block text-sm font-medium text-gray-700 mb-3">
+                    Expected Deliverables
+                  </label>
+                  <textarea
+                    id="deliverables"
+                    name="deliverables"
+                    rows={3}
+                    value={formData.deliverables}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="e.g., 3 Instagram posts, 5 Instagram stories, 1 TikTok video, 1 YouTube short..."
+                  />
+                </div>
+              </div>
+
+              {/* Timeline Section */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                      <span className="text-orange-600 font-bold">4</span>
+                    </span>
+                    Timeline
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-3">
+                      Application Deadline *
+                    </label>
+                    <input
+                      id="deadline"
+                      name="deadline"
+                      type="datetime-local"
+                      required
+                      value={formData.deadline}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="timeline" className="block text-sm font-medium text-gray-700 mb-3">
+                      Campaign Timeline
+                    </label>
+                    <input
+                      id="timeline"
+                      name="timeline"
+                      type="text"
+                      value={formData.timeline}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="e.g., 2 weeks from start date"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-4 pt-6">
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
                 >
-                  {isLoading ? 'Creating Campaign...' : 'Create Campaign'}
+                  {isLoading ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Creating Campaign...
+                    </span>
+                  ) : (
+                    '🚀 Create Campaign'
+                  )}
                 </button>
                 <Link
                   href="/dashboard"
-                  className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-center"
+                  className="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 py-4 px-6 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 text-center font-medium shadow-md hover:shadow-lg"
                 >
                   Cancel
                 </Link>
