@@ -129,6 +129,24 @@ export default function Dashboard() {
                   View Proposals
                 </Link>
               </div>
+
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-200">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mr-4">
+                    <span className="text-2xl">📋</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">My Deliverables</h3>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  Submit and track your campaign deliverables
+                </p>
+                <Link
+                  href="/deliverables"
+                  className="block w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 text-center font-medium shadow-md hover:shadow-lg"
+                >
+                  View Deliverables
+                </Link>
+              </div>
             </>
           )}
 
@@ -168,6 +186,32 @@ export default function Dashboard() {
                 >
                   Manage Campaigns
                 </Link>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-200">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mr-4">
+                    <span className="text-2xl">📋</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">Deliverables</h3>
+                </div>
+                <p className="text-gray-600 mb-6">
+                  Create and review influencer deliverables
+                </p>
+                <div className="space-y-2">
+                  <Link
+                    href="/deliverables"
+                    className="block w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-2 rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 text-center font-medium shadow-md hover:shadow-lg"
+                  >
+                    Review Deliverables
+                  </Link>
+                  <Link
+                    href="/deliverables/create"
+                    className="block w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-6 py-2 rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 text-center font-medium shadow-md hover:shadow-lg"
+                  >
+                    Create Deliverable
+                  </Link>
+                </div>
               </div>
             </>
           )}

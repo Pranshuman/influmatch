@@ -54,11 +54,31 @@ CREATE TABLE IF NOT EXISTS messages (
     "createdAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create deliverables table
+CREATE TABLE IF NOT EXISTS deliverables (
+    id BIGSERIAL PRIMARY KEY,
+    "proposalId" BIGINT NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    type TEXT NOT NULL CHECK (type IN ('image', 'video', 'post', 'story', 'reel', 'other')),
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'submitted', 'under_review', 'approved', 'rejected', 'revision_requested')),
+    "fileUrl" TEXT,
+    "submissionNotes" TEXT,
+    "reviewNotes" TEXT,
+    "dueDate" TIMESTAMPTZ,
+    "submittedAt" TIMESTAMPTZ,
+    "reviewedAt" TIMESTAMPTZ,
+    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_listings_brand_id ON listings("brandId");
 CREATE INDEX IF NOT EXISTS idx_proposals_listing_id ON proposals("listingId");
 CREATE INDEX IF NOT EXISTS idx_proposals_influencer_id ON proposals("influencerId");
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages("conversationId");
+CREATE INDEX IF NOT EXISTS idx_deliverables_proposal_id ON deliverables("proposalId");
+CREATE INDEX IF NOT EXISTS idx_deliverables_status ON deliverables(status);
 CREATE INDEX IF NOT EXISTS idx_messages_proposal_id ON messages("proposalId");
 
 -- Enable Row Level Security (RLS) for better security

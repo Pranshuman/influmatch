@@ -35,6 +35,14 @@ process.exit = (code) => {
 //   PUT /api/users/:id                -> update user profile
 //   POST /api/messages                -> send message
 //   GET /api/messages/:conversationId -> get conversation
+//   GET /api/deliverables/proposal/:proposalId -> get deliverables for a proposal
+//   POST /api/deliverables -> create new deliverable (brand)
+//   PUT /api/deliverables/:id -> update deliverable (brand)
+//   DELETE /api/deliverables/:id -> delete deliverable (brand)
+//   POST /api/deliverables/:id/submit -> submit deliverable (influencer)
+//   PUT /api/deliverables/:id/review -> review deliverable (brand)
+//   GET /api/deliverables/my-deliverables -> get influencer's deliverables
+//   GET /api/deliverables/brand-deliverables -> get brand's deliverables to review
 
 // import 'dotenv/config' // Removed for simplicity
 import express from 'express'
@@ -42,6 +50,7 @@ import cors from 'cors'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { createDbPool, safeQuery, safeTransaction } from './db.js'
+import { dbHelpers } from './dbHelpers.js'
 
 const app = express()
 app.use(express.json())
@@ -138,6 +147,34 @@ async function initializeTables() {
         "isRead" BOOLEAN DEFAULT FALSE,
         "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Deliverables table
+    await safeQuery(dbPool, `
+      CREATE TABLE IF NOT EXISTS deliverables (
+        id SERIAL PRIMARY KEY,
+        "proposalId" INTEGER NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        type VARCHAR(50) NOT NULL CHECK (type IN ('image', 'video', 'post', 'story', 'reel', 'other')),
+        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'submitted', 'under_review', 'approved', 'rejected', 'revision_requested')),
+        "fileUrl" TEXT,
+        "submissionNotes" TEXT,
+        "reviewNotes" TEXT,
+        "dueDate" TIMESTAMP,
+        "submittedAt" TIMESTAMP,
+        "reviewedAt" TIMESTAMP,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexes for deliverables
+    await safeQuery(dbPool, `
+      CREATE INDEX IF NOT EXISTS idx_deliverables_proposal_id ON deliverables("proposalId");
+    `);
+    await safeQuery(dbPool, `
+      CREATE INDEX IF NOT EXISTS idx_deliverables_status ON deliverables(status);
     `);
     
     console.log("[DB] ✅ PostgreSQL tables initialized successfully!");
@@ -259,13 +296,13 @@ app.post('/auth/login', async (req, res) => {
     const { email, password } = req.body
 
     // Find user by email
-    const user = await dbHelpers.getUserByEmail(email)
+    const user = await dbHelpers.getUserByEmail(email, dbPool)
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' })
     }
 
     // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password)
+    const isValidPassword = await bcrypt.compare(password, user.password_hash)
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' })
     }
@@ -278,7 +315,7 @@ app.post('/auth/login', async (req, res) => {
     )
 
     // Return user data (without password)
-    const { password: _, ...userWithoutPassword } = user
+    const { password_hash: _, ...userWithoutPassword } = user
     res.json({
       message: 'Login successful',
       user: userWithoutPassword,
@@ -293,12 +330,12 @@ app.post('/auth/login', async (req, res) => {
 // ---- Listings Routes ----
 app.get('/api/listings', async (req, res) => {
   try {
-    const listings = await dbHelpers.getAllListings()
+    const listings = await dbHelpers.getAllListings(dbPool)
     
     // Get proposals count for each listing
     const listingsWithProposals = await Promise.all(
       listings.map(async (listing) => {
-        const proposals = await dbHelpers.getProposalsForListing(listing.id)
+        const proposals = await dbHelpers.getProposalsForListing(listing.id, dbPool)
         return {
           ...listing,
           brand: {
@@ -362,10 +399,10 @@ app.post('/api/listings', authenticateToken, async (req, res) => {
       requirements: requirements || '',
       deliverables: deliverables || '',
       brandId: parseInt(req.user.userId)
-    })
+    }, dbPool)
 
     // Get the created listing
-    const listing = await dbHelpers.getListingById(listingId)
+    const listing = await dbHelpers.getListingById(listingId, dbPool)
 
     res.status(201).json({
       message: 'Listing created successfully',
@@ -388,14 +425,14 @@ app.post('/api/listings', authenticateToken, async (req, res) => {
 
 app.get('/api/listings/:id', async (req, res) => {
   try {
-    const listing = await dbHelpers.getListingById(req.params.id)
+    const listing = await dbHelpers.getListingById(req.params.id, dbPool)
     
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' })
     }
 
     // Get proposals for this listing
-    const proposals = await dbHelpers.getProposalsForListing(listing.id)
+    const proposals = await dbHelpers.getProposalsForListing(listing.id, dbPool)
 
     const listingWithDetails = {
       ...listing,
@@ -433,7 +470,7 @@ app.get('/api/listings/:id/proposals', authenticateToken, async (req, res) => {
     }
 
     // Get the listing to verify it exists
-    const listing = await dbHelpers.getListingById(listingId)
+    const listing = await dbHelpers.getListingById(listingId, dbPool)
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' })
     }
@@ -447,7 +484,7 @@ app.get('/api/listings/:id/proposals', authenticateToken, async (req, res) => {
     }
 
     // Get proposals for this listing
-    const proposals = await dbHelpers.getProposalsForListing(listingId)
+    const proposals = await dbHelpers.getProposalsForListing(listingId, dbPool)
     
     // If user is an influencer, only show their own proposals
     let filteredProposals = proposals
@@ -482,7 +519,7 @@ app.post('/api/listings/:id/proposals', authenticateToken, async (req, res) => {
     }
 
     // Check if listing exists
-    const listing = await dbHelpers.getListingById(req.params.id)
+    const listing = await dbHelpers.getListingById(req.params.id, dbPool)
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' })
     }
@@ -494,10 +531,10 @@ app.post('/api/listings/:id/proposals', authenticateToken, async (req, res) => {
       message,
       proposedBudget: parseInt(proposedBudget),
       timeline
-    })
+    }, dbPool)
 
     // Get the created proposal with full details
-    const proposal = await dbHelpers.getProposalById(proposalId)
+    const proposal = await dbHelpers.getProposalById(proposalId, dbPool)
 
     res.status(201).json({
       message: 'Proposal submitted successfully',
@@ -525,7 +562,7 @@ app.get('/api/proposals/my-proposals', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied. Only influencers can view their proposals.' })
     }
 
-    const proposals = await dbHelpers.getProposalsByInfluencer(req.user.userId)
+    const proposals = await dbHelpers.getProposalsByInfluencer(req.user.userId, dbPool)
 
     res.json({
       proposals: proposals.map(proposal => ({
@@ -559,7 +596,7 @@ app.put('/api/proposals/:id/status', authenticateToken, async (req, res) => {
     }
 
     // Get the proposal to check ownership
-    const proposal = await dbHelpers.getProposalById(proposalId)
+    const proposal = await dbHelpers.getProposalById(proposalId, dbPool)
     if (!proposal) {
       return res.status(404).json({ error: 'Proposal not found' })
     }
@@ -570,13 +607,13 @@ app.put('/api/proposals/:id/status', authenticateToken, async (req, res) => {
     }
 
     // Update proposal status
-    const success = await dbHelpers.updateProposalStatus(proposalId, status)
+    const success = await dbHelpers.updateProposalStatus(proposalId, status, dbPool)
     if (!success) {
       return res.status(500).json({ error: 'Failed to update proposal status' })
     }
 
     // Get updated proposal
-    const updatedProposal = await dbHelpers.getProposalById(proposalId)
+    const updatedProposal = await dbHelpers.getProposalById(proposalId, dbPool)
 
     res.json({
       message: 'Proposal status updated successfully',
@@ -608,7 +645,7 @@ app.put('/api/proposals/:id', authenticateToken, async (req, res) => {
     }
 
     // Get the proposal to check ownership
-    const proposal = await dbHelpers.getProposalById(proposalId)
+    const proposal = await dbHelpers.getProposalById(proposalId, dbPool)
     if (!proposal) {
       return res.status(404).json({ error: 'Proposal not found' })
     }
@@ -630,14 +667,14 @@ app.put('/api/proposals/:id', authenticateToken, async (req, res) => {
       message,
       proposedBudget: parseInt(proposedBudget),
       timeline
-    })
+    }, dbPool)
 
     if (!success) {
       return res.status(500).json({ error: 'Failed to update proposal' })
     }
 
     // Get updated proposal
-    const updatedProposal = await dbHelpers.getProposalById(proposalId)
+    const updatedProposal = await dbHelpers.getProposalById(proposalId, dbPool)
 
     res.json({
       message: 'Proposal updated successfully',
@@ -660,14 +697,14 @@ app.put('/api/proposals/:id', authenticateToken, async (req, res) => {
 // ---- User Routes ----
 app.get('/api/users/:id', async (req, res) => {
   try {
-    const user = await dbHelpers.getUserById(req.params.id)
+    const user = await dbHelpers.getUserById(req.params.id, dbPool)
     
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
 
     // Return user data (without password)
-    const { password, ...userWithoutPassword } = user
+    const { password_hash, ...userWithoutPassword } = user
     res.json({ user: userWithoutPassword })
   } catch (error) {
     console.error('Error fetching user:', error)
@@ -680,7 +717,7 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
     const { name, bio, website, socialMedia } = req.body
 
     // Check if user exists and is the same user
-    const user = await dbHelpers.getUserById(req.params.id)
+    const user = await dbHelpers.getUserById(req.params.id, dbPool)
     if (!user) {
       return res.status(404).json({ error: 'User not found' })
     }
@@ -743,7 +780,7 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
       senderId: parseInt(req.user.userId),
       recipientId: parseInt(recipientId),
       content
-    })
+    }, dbPool)
 
     // Get the created message
     const message = await db.get('SELECT * FROM messages WHERE id = ?', [messageId])
@@ -760,11 +797,332 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
 
 app.get('/api/messages/:conversationId', authenticateToken, async (req, res) => {
   try {
-    const messages = await dbHelpers.getMessagesForConversation(req.params.conversationId)
+    const messages = await dbHelpers.getMessagesForConversation(req.params.conversationId, dbPool)
 
     res.json({ messages })
   } catch (error) {
     console.error('Error fetching messages:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// ---- Deliverables Routes ----
+// GET deliverables for a specific proposal
+app.get('/api/deliverables/proposal/:proposalId', authenticateToken, async (req, res) => {
+  try {
+    const proposalId = parseInt(req.params.proposalId)
+    
+    if (isNaN(proposalId)) {
+      return res.status(400).json({ error: 'Invalid proposal ID' })
+    }
+
+    // Get the proposal to verify access
+    const proposal = await dbHelpers.getProposalById(proposalId, dbPool)
+    if (!proposal) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    // Check if user has access to this proposal
+    const isBrandOwner = req.user.userType === 'brand' && req.user.userId === proposal.brandId
+    const isInfluencer = req.user.userType === 'influencer' && req.user.userId === proposal.influencerId
+    
+    if (!isBrandOwner && !isInfluencer) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    // Get deliverables for this proposal
+    const deliverables = await dbHelpers.getDeliverablesByProposal(proposalId, dbPool)
+
+    res.json({ deliverables })
+  } catch (error) {
+    console.error('Error fetching deliverables:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// POST create new deliverable (brand only)
+app.post('/api/deliverables', authenticateToken, async (req, res) => {
+  try {
+    const { proposalId, title, description, type, dueDate } = req.body
+
+    // Validate required fields
+    if (!proposalId || !title || !type) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+
+    // Validate type
+    const validTypes = ['image', 'video', 'post', 'story', 'reel', 'other']
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid deliverable type' })
+    }
+
+    // Get the proposal to verify access
+    const proposal = await dbHelpers.getProposalById(proposalId, dbPool)
+    if (!proposal) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    // Check if user is the brand owner
+    if (req.user.userType !== 'brand' || req.user.userId !== proposal.brandId) {
+      return res.status(403).json({ error: 'Access denied. Only the brand owner can create deliverables.' })
+    }
+
+    // Check if proposal is accepted
+    if (proposal.status !== 'accepted') {
+      return res.status(400).json({ error: 'Can only create deliverables for accepted proposals' })
+    }
+
+    // Create deliverable
+    const deliverableId = await dbHelpers.createDeliverable({
+      proposalId: parseInt(proposalId),
+      title,
+      description: description || '',
+      type,
+      dueDate: dueDate ? new Date(dueDate) : null
+    }, dbPool)
+
+    // Get the created deliverable
+    const deliverable = await dbHelpers.getDeliverableById(deliverableId, dbPool)
+
+    res.status(201).json({
+      message: 'Deliverable created successfully',
+      deliverable
+    })
+  } catch (error) {
+    console.error('Error creating deliverable:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// PUT update deliverable (brand only)
+app.put('/api/deliverables/:id', authenticateToken, async (req, res) => {
+  try {
+    const { title, description, type, dueDate } = req.body
+    const deliverableId = parseInt(req.params.id)
+
+    // Validate required fields
+    if (!title || !type) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+
+    // Validate type
+    const validTypes = ['image', 'video', 'post', 'story', 'reel', 'other']
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid deliverable type' })
+    }
+
+    // Get the deliverable to verify access
+    const deliverable = await dbHelpers.getDeliverableById(deliverableId, dbPool)
+    if (!deliverable) {
+      return res.status(404).json({ error: 'Deliverable not found' })
+    }
+
+    // Check if user is the brand owner
+    if (req.user.userType !== 'brand' || req.user.userId !== deliverable.brandId) {
+      return res.status(403).json({ error: 'Access denied. Only the brand owner can update deliverables.' })
+    }
+
+    // Check if deliverable can be updated (only if not submitted)
+    if (deliverable.status !== 'pending') {
+      return res.status(400).json({ error: 'Can only update pending deliverables' })
+    }
+
+    // Update deliverable
+    const success = await dbHelpers.updateDeliverable(deliverableId, {
+      title,
+      description: description || '',
+      type,
+      dueDate: dueDate ? new Date(dueDate) : null
+    }, dbPool)
+
+    if (!success) {
+      return res.status(500).json({ error: 'Failed to update deliverable' })
+    }
+
+    // Get updated deliverable
+    const updatedDeliverable = await dbHelpers.getDeliverableById(deliverableId, dbPool)
+
+    res.json({
+      message: 'Deliverable updated successfully',
+      deliverable: updatedDeliverable
+    })
+  } catch (error) {
+    console.error('Error updating deliverable:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// DELETE deliverable (brand only)
+app.delete('/api/deliverables/:id', authenticateToken, async (req, res) => {
+  try {
+    const deliverableId = parseInt(req.params.id)
+
+    // Get the deliverable to verify access
+    const deliverable = await dbHelpers.getDeliverableById(deliverableId, dbPool)
+    if (!deliverable) {
+      return res.status(404).json({ error: 'Deliverable not found' })
+    }
+
+    // Check if user is the brand owner
+    if (req.user.userType !== 'brand' || req.user.userId !== deliverable.brandId) {
+      return res.status(403).json({ error: 'Access denied. Only the brand owner can delete deliverables.' })
+    }
+
+    // Check if deliverable can be deleted (only if not submitted)
+    if (deliverable.status !== 'pending') {
+      return res.status(400).json({ error: 'Can only delete pending deliverables' })
+    }
+
+    // Delete deliverable
+    const success = await dbHelpers.deleteDeliverable(deliverableId, dbPool)
+
+    if (!success) {
+      return res.status(500).json({ error: 'Failed to delete deliverable' })
+    }
+
+    res.json({ message: 'Deliverable deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting deliverable:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// POST submit deliverable (influencer only)
+app.post('/api/deliverables/:id/submit', authenticateToken, async (req, res) => {
+  try {
+    const { fileUrl, submissionNotes } = req.body
+    const deliverableId = parseInt(req.params.id)
+
+    // Validate required fields
+    if (!fileUrl) {
+      return res.status(400).json({ error: 'File URL is required' })
+    }
+
+    // Get the deliverable to verify access
+    const deliverable = await dbHelpers.getDeliverableById(deliverableId, dbPool)
+    if (!deliverable) {
+      return res.status(404).json({ error: 'Deliverable not found' })
+    }
+
+    // Check if user is the influencer
+    if (req.user.userType !== 'influencer' || req.user.userId !== deliverable.influencerId) {
+      return res.status(403).json({ error: 'Access denied. Only the assigned influencer can submit deliverables.' })
+    }
+
+    // Check if deliverable can be submitted
+    if (deliverable.status !== 'pending') {
+      return res.status(400).json({ error: 'Can only submit pending deliverables' })
+    }
+
+    // Submit deliverable
+    const success = await dbHelpers.submitDeliverable(deliverableId, {
+      fileUrl,
+      submissionNotes: submissionNotes || ''
+    }, dbPool)
+
+    if (!success) {
+      return res.status(500).json({ error: 'Failed to submit deliverable' })
+    }
+
+    // Get updated deliverable
+    const updatedDeliverable = await dbHelpers.getDeliverableById(deliverableId, dbPool)
+
+    res.json({
+      message: 'Deliverable submitted successfully',
+      deliverable: updatedDeliverable
+    })
+  } catch (error) {
+    console.error('Error submitting deliverable:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// PUT review deliverable (brand only)
+app.put('/api/deliverables/:id/review', authenticateToken, async (req, res) => {
+  try {
+    const { status, reviewNotes } = req.body
+    const deliverableId = parseInt(req.params.id)
+
+    // Validate required fields
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' })
+    }
+
+    // Validate status
+    const validStatuses = ['approved', 'rejected', 'revision_requested']
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' })
+    }
+
+    // Get the deliverable to verify access
+    const deliverable = await dbHelpers.getDeliverableById(deliverableId, dbPool)
+    if (!deliverable) {
+      return res.status(404).json({ error: 'Deliverable not found' })
+    }
+
+    // Check if user is the brand owner
+    if (req.user.userType !== 'brand' || req.user.userId !== deliverable.brandId) {
+      return res.status(403).json({ error: 'Access denied. Only the brand owner can review deliverables.' })
+    }
+
+    // Check if deliverable can be reviewed
+    if (deliverable.status !== 'submitted') {
+      return res.status(400).json({ error: 'Can only review submitted deliverables' })
+    }
+
+    // Review deliverable
+    const success = await dbHelpers.reviewDeliverable(deliverableId, {
+      status,
+      reviewNotes: reviewNotes || ''
+    }, dbPool)
+
+    if (!success) {
+      return res.status(500).json({ error: 'Failed to review deliverable' })
+    }
+
+    // Get updated deliverable
+    const updatedDeliverable = await dbHelpers.getDeliverableById(deliverableId, dbPool)
+
+    res.json({
+      message: 'Deliverable reviewed successfully',
+      deliverable: updatedDeliverable
+    })
+  } catch (error) {
+    console.error('Error reviewing deliverable:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// GET influencer's deliverables
+app.get('/api/deliverables/my-deliverables', authenticateToken, async (req, res) => {
+  try {
+    // Only influencers can access this endpoint
+    if (req.user.userType !== 'influencer') {
+      return res.status(403).json({ error: 'Access denied. Only influencers can view their deliverables.' })
+    }
+
+    const deliverables = await dbHelpers.getDeliverablesByInfluencer(req.user.userId, dbPool)
+
+    res.json({ deliverables })
+  } catch (error) {
+    console.error('Error fetching influencer deliverables:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+// GET brand's deliverables to review
+app.get('/api/deliverables/brand-deliverables', authenticateToken, async (req, res) => {
+  try {
+    // Only brands can access this endpoint
+    if (req.user.userType !== 'brand') {
+      return res.status(403).json({ error: 'Access denied. Only brands can view deliverables to review.' })
+    }
+
+    const deliverables = await dbHelpers.getDeliverablesByBrand(req.user.userId, dbPool)
+
+    res.json({ deliverables })
+  } catch (error) {
+    console.error('Error fetching brand deliverables:', error)
     res.status(500).json({ error: 'Internal server error' })
   }
 })

@@ -1145,6 +1145,446 @@ app.get('/api/proposals/:id/chat', authenticateToken, async (req, res) => {
   }
 })
 
+// ---- Deliverables Routes ----
+// GET deliverables for a specific proposal
+app.get('/api/deliverables/proposal/:proposalId', authenticateToken, async (req, res) => {
+  try {
+    const proposalId = parseInt(req.params.proposalId)
+    
+    if (isNaN(proposalId)) {
+      return res.status(400).json({ error: 'Invalid proposal ID' })
+    }
+
+    // Get the proposal to verify access
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+
+    // Get the listing to check brand ownership
+    const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+    if (!listings || listings.length === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+
+    const listing = listings[0]
+
+    // Check if user has access to this proposal
+    const isBrandOwner = req.user.userType === 'brand' && req.user.userId === listing.brandId
+    const isInfluencer = req.user.userType === 'influencer' && req.user.userId === proposal.influencerId
+    
+    if (!isBrandOwner && !isInfluencer) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+
+    // Get deliverables for this proposal
+    const deliverables = await safeSupabaseQuery('deliverables', 'select', null, { proposalId })
+
+    res.json({ deliverables: deliverables || [] })
+  } catch (error) {
+    console.error('[GET_DELIVERABLES] Error:', error)
+    res.status(500).json({ error: 'Failed to fetch deliverables' })
+  }
+})
+
+// POST create new deliverable (brand only)
+app.post('/api/deliverables', authenticateToken, async (req, res) => {
+  try {
+    const { proposalId, title, description, type, dueDate } = req.body
+
+    // Validate required fields
+    if (!proposalId || !title || !type) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+
+    // Validate type
+    const validTypes = ['image', 'video', 'post', 'story', 'reel', 'other']
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid deliverable type' })
+    }
+
+    // Get the proposal to verify access
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+
+    // Get the listing to check brand ownership
+    const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+    if (!listings || listings.length === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+
+    const listing = listings[0]
+
+    // Check if user is the brand owner
+    if (req.user.userType !== 'brand' || req.user.userId !== listing.brandId) {
+      return res.status(403).json({ error: 'Access denied. Only the brand owner can create deliverables.' })
+    }
+
+    // Check if proposal is accepted
+    if (proposal.status !== 'accepted') {
+      return res.status(400).json({ error: 'Can only create deliverables for accepted proposals' })
+    }
+
+    // Create deliverable
+    const deliverableData = {
+      proposalId: parseInt(proposalId),
+      title,
+      description: description || null,
+      type,
+      dueDate: dueDate ? new Date(dueDate).toISOString() : null
+    }
+
+    const deliverables = await safeSupabaseQuery('deliverables', 'insert', deliverableData)
+    const deliverable = deliverables[0]
+
+    res.status(201).json({
+      message: 'Deliverable created successfully',
+      deliverable
+    })
+  } catch (error) {
+    console.error('[CREATE_DELIVERABLE] Error:', error)
+    res.status(500).json({ error: 'Failed to create deliverable' })
+  }
+})
+
+// PUT update deliverable (brand only)
+app.put('/api/deliverables/:id', authenticateToken, async (req, res) => {
+  try {
+    const { title, description, type, dueDate } = req.body
+    const deliverableId = parseInt(req.params.id)
+
+    // Validate required fields
+    if (!title || !type) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+
+    // Validate type
+    const validTypes = ['image', 'video', 'post', 'story', 'reel', 'other']
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid deliverable type' })
+    }
+
+    // Get the deliverable to verify access
+    const deliverables = await safeSupabaseQuery('deliverables', 'select', null, { id: deliverableId })
+    if (!deliverables || deliverables.length === 0) {
+      return res.status(404).json({ error: 'Deliverable not found' })
+    }
+
+    const deliverable = deliverables[0]
+
+    // Get the proposal and listing to check brand ownership
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: deliverable.proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+    const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+    if (!listings || listings.length === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+
+    const listing = listings[0]
+
+    // Check if user is the brand owner
+    if (req.user.userType !== 'brand' || req.user.userId !== listing.brandId) {
+      return res.status(403).json({ error: 'Access denied. Only the brand owner can update deliverables.' })
+    }
+
+    // Check if deliverable can be updated (only if not submitted)
+    if (deliverable.status !== 'pending') {
+      return res.status(400).json({ error: 'Can only update pending deliverables' })
+    }
+
+    // Update deliverable
+    const updateData = {
+      title,
+      description: description || null,
+      type,
+      dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      updatedAt: new Date().toISOString()
+    }
+
+    const updatedDeliverables = await safeSupabaseQuery('deliverables', 'update', updateData, { id: deliverableId })
+    const updatedDeliverable = updatedDeliverables[0]
+
+    res.json({
+      message: 'Deliverable updated successfully',
+      deliverable: updatedDeliverable
+    })
+  } catch (error) {
+    console.error('[UPDATE_DELIVERABLE] Error:', error)
+    res.status(500).json({ error: 'Failed to update deliverable' })
+  }
+})
+
+// DELETE deliverable (brand only)
+app.delete('/api/deliverables/:id', authenticateToken, async (req, res) => {
+  try {
+    const deliverableId = parseInt(req.params.id)
+
+    // Get the deliverable to verify access
+    const deliverables = await safeSupabaseQuery('deliverables', 'select', null, { id: deliverableId })
+    if (!deliverables || deliverables.length === 0) {
+      return res.status(404).json({ error: 'Deliverable not found' })
+    }
+
+    const deliverable = deliverables[0]
+
+    // Get the proposal and listing to check brand ownership
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: deliverable.proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+    const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+    if (!listings || listings.length === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+
+    const listing = listings[0]
+
+    // Check if user is the brand owner
+    if (req.user.userType !== 'brand' || req.user.userId !== listing.brandId) {
+      return res.status(403).json({ error: 'Access denied. Only the brand owner can delete deliverables.' })
+    }
+
+    // Check if deliverable can be deleted (only if not submitted)
+    if (deliverable.status !== 'pending') {
+      return res.status(400).json({ error: 'Can only delete pending deliverables' })
+    }
+
+    // Delete deliverable
+    await safeSupabaseQuery('deliverables', 'delete', null, { id: deliverableId })
+
+    res.json({ message: 'Deliverable deleted successfully' })
+  } catch (error) {
+    console.error('[DELETE_DELIVERABLE] Error:', error)
+    res.status(500).json({ error: 'Failed to delete deliverable' })
+  }
+})
+
+// POST submit deliverable (influencer only)
+app.post('/api/deliverables/:id/submit', authenticateToken, async (req, res) => {
+  try {
+    const { fileUrl, submissionNotes } = req.body
+    const deliverableId = parseInt(req.params.id)
+
+    // Validate required fields
+    if (!fileUrl) {
+      return res.status(400).json({ error: 'File URL is required' })
+    }
+
+    // Get the deliverable to verify access
+    const deliverables = await safeSupabaseQuery('deliverables', 'select', null, { id: deliverableId })
+    if (!deliverables || deliverables.length === 0) {
+      return res.status(404).json({ error: 'Deliverable not found' })
+    }
+
+    const deliverable = deliverables[0]
+
+    // Get the proposal to check influencer access
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: deliverable.proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+
+    // Check if user is the influencer
+    if (req.user.userType !== 'influencer' || req.user.userId !== proposal.influencerId) {
+      return res.status(403).json({ error: 'Access denied. Only the assigned influencer can submit deliverables.' })
+    }
+
+    // Check if deliverable can be submitted
+    if (deliverable.status !== 'pending') {
+      return res.status(400).json({ error: 'Can only submit pending deliverables' })
+    }
+
+    // Submit deliverable
+    const updateData = {
+      fileUrl,
+      submissionNotes: submissionNotes || null,
+      status: 'submitted',
+      submittedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    const updatedDeliverables = await safeSupabaseQuery('deliverables', 'update', updateData, { id: deliverableId })
+    const updatedDeliverable = updatedDeliverables[0]
+
+    res.json({
+      message: 'Deliverable submitted successfully',
+      deliverable: updatedDeliverable
+    })
+  } catch (error) {
+    console.error('[SUBMIT_DELIVERABLE] Error:', error)
+    res.status(500).json({ error: 'Failed to submit deliverable' })
+  }
+})
+
+// PUT review deliverable (brand only)
+app.put('/api/deliverables/:id/review', authenticateToken, async (req, res) => {
+  try {
+    const { status, reviewNotes } = req.body
+    const deliverableId = parseInt(req.params.id)
+
+    // Validate required fields
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' })
+    }
+
+    // Validate status
+    const validStatuses = ['approved', 'rejected', 'revision_requested']
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' })
+    }
+
+    // Get the deliverable to verify access
+    const deliverables = await safeSupabaseQuery('deliverables', 'select', null, { id: deliverableId })
+    if (!deliverables || deliverables.length === 0) {
+      return res.status(404).json({ error: 'Deliverable not found' })
+    }
+
+    const deliverable = deliverables[0]
+
+    // Get the proposal and listing to check brand ownership
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: deliverable.proposalId })
+    if (!proposals || proposals.length === 0) {
+      return res.status(404).json({ error: 'Proposal not found' })
+    }
+
+    const proposal = proposals[0]
+    const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+    if (!listings || listings.length === 0) {
+      return res.status(404).json({ error: 'Listing not found' })
+    }
+
+    const listing = listings[0]
+
+    // Check if user is the brand owner
+    if (req.user.userType !== 'brand' || req.user.userId !== listing.brandId) {
+      return res.status(403).json({ error: 'Access denied. Only the brand owner can review deliverables.' })
+    }
+
+    // Check if deliverable can be reviewed
+    if (deliverable.status !== 'submitted') {
+      return res.status(400).json({ error: 'Can only review submitted deliverables' })
+    }
+
+    // Review deliverable
+    const updateData = {
+      status,
+      reviewNotes: reviewNotes || null,
+      reviewedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    const updatedDeliverables = await safeSupabaseQuery('deliverables', 'update', updateData, { id: deliverableId })
+    const updatedDeliverable = updatedDeliverables[0]
+
+    res.json({
+      message: 'Deliverable reviewed successfully',
+      deliverable: updatedDeliverable
+    })
+  } catch (error) {
+    console.error('[REVIEW_DELIVERABLE] Error:', error)
+    res.status(500).json({ error: 'Failed to review deliverable' })
+  }
+})
+
+// GET influencer's deliverables
+app.get('/api/deliverables/my-deliverables', authenticateToken, async (req, res) => {
+  try {
+    // Only influencers can access this endpoint
+    if (req.user.userType !== 'influencer') {
+      return res.status(403).json({ error: 'Access denied. Only influencers can view their deliverables.' })
+    }
+
+    // Get all proposals by this influencer
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { influencerId: req.user.userId })
+    
+    if (!proposals || proposals.length === 0) {
+      return res.json({ deliverables: [] })
+    }
+
+    // Get deliverables for all proposals
+    const deliverables = []
+    for (const proposal of proposals) {
+      const proposalDeliverables = await safeSupabaseQuery('deliverables', 'select', null, { proposalId: proposal.id })
+      if (proposalDeliverables && proposalDeliverables.length > 0) {
+        // Add proposal and listing info to each deliverable
+        const listing = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
+        const brand = await safeSupabaseQuery('users', 'select', null, { id: listing[0]?.brandId })
+        
+        for (const deliverable of proposalDeliverables) {
+          deliverables.push({
+            ...deliverable,
+            listingTitle: listing[0]?.title,
+            brandName: brand[0]?.name
+          })
+        }
+      }
+    }
+
+    res.json({ deliverables })
+  } catch (error) {
+    console.error('[GET_MY_DELIVERABLES] Error:', error)
+    res.status(500).json({ error: 'Failed to fetch influencer deliverables' })
+  }
+})
+
+// GET brand's deliverables to review
+app.get('/api/deliverables/brand-deliverables', authenticateToken, async (req, res) => {
+  try {
+    // Only brands can access this endpoint
+    if (req.user.userType !== 'brand') {
+      return res.status(403).json({ error: 'Access denied. Only brands can view deliverables to review.' })
+    }
+
+    // Get all listings by this brand
+    const listings = await safeSupabaseQuery('listings', 'select', null, { brandId: req.user.userId })
+    
+    if (!listings || listings.length === 0) {
+      return res.json({ deliverables: [] })
+    }
+
+    // Get deliverables for all proposals of these listings
+    const deliverables = []
+    for (const listing of listings) {
+      const proposals = await safeSupabaseQuery('proposals', 'select', null, { listingId: listing.id })
+      
+      for (const proposal of proposals) {
+        const proposalDeliverables = await safeSupabaseQuery('deliverables', 'select', null, { proposalId: proposal.id })
+        if (proposalDeliverables && proposalDeliverables.length > 0) {
+          // Add proposal and influencer info to each deliverable
+          const influencer = await safeSupabaseQuery('users', 'select', null, { id: proposal.influencerId })
+          
+          for (const deliverable of proposalDeliverables) {
+            deliverables.push({
+              ...deliverable,
+              listingTitle: listing.title,
+              influencerName: influencer[0]?.name
+            })
+          }
+        }
+      }
+    }
+
+    res.json({ deliverables })
+  } catch (error) {
+    console.error('[GET_BRAND_DELIVERABLES] Error:', error)
+    res.status(500).json({ error: 'Failed to fetch brand deliverables' })
+  }
+})
+
 // ---- Error Handling ----
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err)
@@ -1176,6 +1616,14 @@ async function startServer() {
       console.log(`   - PUT /api/proposals/:id/status (update proposal status)`)
       console.log(`   - GET /api/users/:id (get user profile)`)
       console.log(`   - POST /api/messages (send message)`)
+      console.log(`   - GET /api/deliverables/proposal/:id (get deliverables for proposal)`)
+      console.log(`   - POST /api/deliverables (create deliverable)`)
+      console.log(`   - PUT /api/deliverables/:id (update deliverable)`)
+      console.log(`   - DELETE /api/deliverables/:id (delete deliverable)`)
+      console.log(`   - POST /api/deliverables/:id/submit (submit deliverable)`)
+      console.log(`   - PUT /api/deliverables/:id/review (review deliverable)`)
+      console.log(`   - GET /api/deliverables/my-deliverables (get influencer deliverables)`)
+      console.log(`   - GET /api/deliverables/brand-deliverables (get brand deliverables)`)
       console.log(`   - GET /healthz (health check)`)
       console.log(`✅ Server started successfully at ${new Date().toISOString()}`)
     })

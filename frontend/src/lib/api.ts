@@ -60,6 +60,32 @@ export interface Proposal {
   listingDeadline?: string
 }
 
+export interface Deliverable {
+  id: number
+  proposalId: number
+  title: string
+  description?: string
+  type: 'image' | 'video' | 'post' | 'story' | 'reel' | 'other'
+  status: 'pending' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'revision_requested'
+  fileUrl?: string
+  submissionNotes?: string
+  reviewNotes?: string
+  dueDate?: string
+  submittedAt?: string
+  reviewedAt?: string
+  createdAt: string
+  updatedAt: string
+  // Related data
+  influencerId?: number
+  influencerName?: string
+  influencerEmail?: string
+  listingId?: number
+  listingTitle?: string
+  brandId?: number
+  brandName?: string
+  brandEmail?: string
+}
+
 export interface Message {
   id: number
   senderId: number
@@ -409,6 +435,185 @@ class MarketplaceAPI {
 
     if (!response.ok) {
       let errorMessage = 'Failed to fetch proposal chat'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  // Deliverables Methods
+  async getDeliverablesByProposal(proposalId: number): Promise<{ deliverables: Deliverable[] }> {
+    const response = await fetch(`${API_BASE}/api/deliverables/proposal/${proposalId}`, {
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch deliverables'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  async createDeliverable(deliverableData: {
+    proposalId: number
+    title: string
+    description?: string
+    type: 'image' | 'video' | 'post' | 'story' | 'reel' | 'other'
+    dueDate?: string
+  }): Promise<{ message: string; deliverable: Deliverable }> {
+    const response = await fetch(`${API_BASE}/api/deliverables`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(deliverableData),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to create deliverable'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  async updateDeliverable(deliverableId: number, deliverableData: {
+    title: string
+    description?: string
+    type: 'image' | 'video' | 'post' | 'story' | 'reel' | 'other'
+    dueDate?: string
+  }): Promise<{ message: string; deliverable: Deliverable }> {
+    const response = await fetch(`${API_BASE}/api/deliverables/${deliverableId}`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify(deliverableData),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to update deliverable'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  async deleteDeliverable(deliverableId: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE}/api/deliverables/${deliverableId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to delete deliverable'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  async submitDeliverable(deliverableId: number, submissionData: {
+    fileUrl: string
+    submissionNotes?: string
+  }): Promise<{ message: string; deliverable: Deliverable }> {
+    const response = await fetch(`${API_BASE}/api/deliverables/${deliverableId}/submit`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(submissionData),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to submit deliverable'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  async reviewDeliverable(deliverableId: number, reviewData: {
+    status: 'approved' | 'rejected' | 'revision_requested'
+    reviewNotes?: string
+  }): Promise<{ message: string; deliverable: Deliverable }> {
+    const response = await fetch(`${API_BASE}/api/deliverables/${deliverableId}/review`, {
+      method: 'PUT',
+      headers: this.getHeaders(),
+      body: JSON.stringify(reviewData),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to review deliverable'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  async getMyDeliverables(): Promise<{ deliverables: Deliverable[] }> {
+    const response = await fetch(`${API_BASE}/api/deliverables/my-deliverables`, {
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch my deliverables'
+      try {
+        const error = await response.json()
+        errorMessage = error.message || error.error || errorMessage
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
+    }
+
+    return response.json()
+  }
+
+  async getBrandDeliverables(): Promise<{ deliverables: Deliverable[] }> {
+    const response = await fetch(`${API_BASE}/api/deliverables/brand-deliverables`, {
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch brand deliverables'
       try {
         const error = await response.json()
         errorMessage = error.message || error.error || errorMessage
