@@ -433,20 +433,6 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
 
-                {/* Show message when user already has a proposal */}
-                {hasExistingProposal && !canSubmitProposal && user?.userType === 'influencer' && (
-                  <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-gray-600 mb-2">You have already submitted a proposal for this campaign.</p>
-                    {userProposal?.status === 'under_review' && (
-                      <Link
-                        href={`/proposals/edit/${userProposal.id}`}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Edit your proposal
-                      </Link>
-                    )}
-                  </div>
-                )}
 
                 {!isAuthenticated && (
                   <div className="text-center">
