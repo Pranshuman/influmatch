@@ -374,7 +374,7 @@ export default function CreateDeliverablePage() {
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 pr-2">{campaign.title}</h3>
                       <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex-shrink-0">
-                        ${campaign.budget.toLocaleString()}
+                        Rs. {campaign.budget.toLocaleString()}
                       </span>
                     </div>
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3">{campaign.description}</p>
@@ -417,7 +417,7 @@ export default function CreateDeliverablePage() {
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">{proposal.influencer?.name}</h3>
                       <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                        ${proposal.proposedBudget?.toLocaleString()}
+                        Rs. {proposal.proposedBudget?.toLocaleString()}
                       </span>
                     </div>
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3">{proposal.message}</p>

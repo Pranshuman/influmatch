@@ -230,10 +230,10 @@ export default function CreateCampaign() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-3">
-                      Budget ($) *
+                      Budget (Rs.) *
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">Rs.</span>
                       <input
                         id="budget"
                         name="budget"

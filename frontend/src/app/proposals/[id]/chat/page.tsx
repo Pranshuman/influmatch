@@ -198,12 +198,12 @@ export default function ProposalChatPage({ params }: { params: Promise<{ id: str
               
               <div>
                 <h4 className="font-medium text-gray-900">Budget</h4>
-                <p className="text-sm text-gray-600">${listing.budget?.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Rs. {listing.budget?.toLocaleString()}</p>
               </div>
               
               <div>
                 <h4 className="font-medium text-gray-900">Proposed Rate</h4>
-                <p className="text-sm text-gray-600">${proposal.proposedBudget?.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Rs. {proposal.proposedBudget?.toLocaleString()}</p>
               </div>
               
               <div>

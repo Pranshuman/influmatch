@@ -152,7 +152,7 @@ export default function EditProposalPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-600">Campaign Budget:</p>
-              <p className="font-semibold">${proposal.listingBudget?.toLocaleString() || '0'}</p>
+              <p className="font-semibold">Rs. {proposal.listingBudget?.toLocaleString() || '0'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Deadline:</p>
@@ -184,7 +184,7 @@ export default function EditProposalPage() {
 
             <div>
               <label htmlFor="proposedBudget" className="block text-sm font-medium text-gray-700 mb-2">
-                Proposed Budget ($) *
+                Proposed Budget (Rs.) *
               </label>
               <input
                 type="number"
@@ -198,7 +198,7 @@ export default function EditProposalPage() {
                 required
               />
               <p className="mt-1 text-sm text-gray-500">
-                Campaign budget: ${proposal.listingBudget?.toLocaleString() || '0'}
+                Campaign budget: Rs. {proposal.listingBudget?.toLocaleString() || '0'}
               </p>
             </div>
 

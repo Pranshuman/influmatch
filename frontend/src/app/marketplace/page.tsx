@@ -142,7 +142,7 @@ export default function Marketplace() {
                   <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl">
                     <span className="text-sm text-gray-600">💰 Budget</span>
                     <span className="font-bold text-green-600 text-lg">
-                      ${listing.budget.toLocaleString()}
+                      Rs. {listing.budget.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl">

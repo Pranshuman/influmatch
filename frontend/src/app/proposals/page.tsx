@@ -85,7 +85,7 @@ const ProposalCard = ({ proposal }: { proposal: Proposal }) => {
           <div>
             <p className="text-sm text-gray-600">Proposed Budget:</p>
             <p className="font-semibold text-green-600">
-              ${proposal.proposedBudget?.toLocaleString() || '0'}
+              Rs. {proposal.proposedBudget?.toLocaleString() || '0'}
             </p>
           </div>
           <div>
@@ -97,7 +97,7 @@ const ProposalCard = ({ proposal }: { proposal: Proposal }) => {
         <div>
           <p className="text-sm text-gray-600">Campaign Budget:</p>
           <p className="font-semibold">
-            ${proposal.listingBudget?.toLocaleString() || '0'}
+            Rs. {proposal.listingBudget?.toLocaleString() || '0'}
           </p>
         </div>
 

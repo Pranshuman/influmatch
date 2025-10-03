@@ -242,7 +242,7 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                           </div>
                           <p className="text-gray-700 mb-2">{proposal.message}</p>
                           <div className="flex justify-between items-center text-sm text-gray-600">
-                            <span>Proposed Rate: <strong>${proposal.proposedBudget?.toLocaleString() || '0'}</strong></span>
+                            <span>Proposed Rate: <strong>Rs. {proposal.proposedBudget?.toLocaleString() || '0'}</strong></span>
                             <span>{new Date(proposal.createdAt).toLocaleDateString()}</span>
                           </div>
                         </div>
@@ -269,7 +269,7 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                       <div className="flex justify-between items-center">
                         <span className="text-green-700 font-medium">Budget:</span>
                         <span className="font-bold text-green-600 text-xl">
-                          ${listing.budget?.toLocaleString() || '0'}
+                          Rs. {listing.budget?.toLocaleString() || '0'}
                         </span>
                       </div>
                     </div>
@@ -332,7 +332,7 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-blue-700 font-medium">Your Rate:</span>
-                        <span className="font-bold text-blue-900 text-lg">${userProposal.proposedBudget?.toLocaleString() || '0'}</span>
+                        <span className="font-bold text-blue-900 text-lg">Rs. {userProposal.proposedBudget?.toLocaleString() || '0'}</span>
                       </div>
                       <div className="text-sm text-blue-600">
                         Submitted: {new Date(userProposal.createdAt).toLocaleDateString()}
@@ -385,10 +385,10 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Your Rate ($) *
+                              Your Rate (Rs.) *
                             </label>
                             <div className="relative">
-                              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">Rs.</span>
                               <input
                                 type="number"
                                 min="0"

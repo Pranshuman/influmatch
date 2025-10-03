@@ -86,7 +86,7 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
               {proposal.influencer?.name || 'Unknown Influencer'}
             </h4>
             <p className="text-xs text-gray-600 truncate">
-              ${proposal.proposedBudget?.toLocaleString() || '0'} • {proposal.timeline || 'No timeline'}
+              Rs. {proposal.proposedBudget?.toLocaleString() || '0'} • {proposal.timeline || 'No timeline'}
             </p>
           </div>
         </div>
@@ -114,7 +114,7 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
             <div className="bg-green-50 rounded-lg p-2">
               <p className="text-xs text-gray-600 mb-1">💰 Budget:</p>
               <p className="font-bold text-green-600 text-sm">
-                ${proposal.proposedBudget?.toLocaleString() || '0'}
+                Rs. {proposal.proposedBudget?.toLocaleString() || '0'}
               </p>
             </div>
             <div className="bg-blue-50 rounded-lg p-2">
@@ -256,7 +256,7 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
           <div className="bg-green-50 rounded-lg p-3 text-center">
             <p className="text-xs text-gray-600 mb-1">💰 Budget</p>
-            <p className="font-bold text-green-600 text-sm">${listing.budget?.toLocaleString() || '0'}</p>
+            <p className="font-bold text-green-600 text-sm">Rs. {listing.budget?.toLocaleString() || '0'}</p>
           </div>
           <div className="bg-blue-50 rounded-lg p-3 text-center">
             <p className="text-xs text-gray-600 mb-1">📅 App Deadline</p>
