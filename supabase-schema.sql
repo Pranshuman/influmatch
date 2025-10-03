@@ -82,47 +82,6 @@ CREATE INDEX IF NOT EXISTS idx_deliverables_proposal_id ON deliverables("proposa
 CREATE INDEX IF NOT EXISTS idx_deliverables_status ON deliverables(status);
 CREATE INDEX IF NOT EXISTS idx_messages_proposal_id ON messages("proposalId");
 
--- NextAuth.js tables
-CREATE TABLE IF NOT EXISTS accounts (
-    id SERIAL,
-    "userId" INTEGER NOT NULL,
-    type VARCHAR(255) NOT NULL,
-    provider VARCHAR(255) NOT NULL,
-    "providerAccountId" VARCHAR(255) NOT NULL,
-    refresh_token TEXT,
-    access_token TEXT,
-    expires_at INTEGER,
-    id_token TEXT,
-    scope VARCHAR(255),
-    session_state VARCHAR(255),
-    oauth_token_secret VARCHAR(255),
-    oauth_token VARCHAR(255),
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (id)
-);
-
-CREATE TABLE IF NOT EXISTS sessions (
-    id SERIAL,
-    "userId" INTEGER NOT NULL,
-    expires TIMESTAMPTZ NOT NULL,
-    "sessionToken" VARCHAR(255) NOT NULL,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (id)
-);
-
-CREATE TABLE IF NOT EXISTS verification_tokens (
-    identifier VARCHAR(255) NOT NULL,
-    token VARCHAR(255) NOT NULL,
-    expires TIMESTAMPTZ NOT NULL,
-    PRIMARY KEY (identifier, token)
-);
-
--- Add indexes for NextAuth tables
-CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON accounts("userId");
-CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions("userId");
-CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions("sessionToken");
 
 -- Enable Row Level Security (RLS) for better security
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
