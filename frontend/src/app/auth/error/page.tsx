@@ -2,14 +2,20 @@
 
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 function AuthErrorContent() {
+  const [error, setError] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
   const searchParams = useSearchParams()
-  const error = searchParams.get('error')
+
+  useEffect(() => {
+    setMounted(true)
+    setError(searchParams.get('error'))
+  }, [searchParams])
 
   const getErrorMessage = (error: string | null) => {
     switch (error) {
@@ -27,6 +33,17 @@ function AuthErrorContent() {
   }
 
   const errorMessage = getErrorMessage(error)
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">

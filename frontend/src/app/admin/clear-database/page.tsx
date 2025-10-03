@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export default function ClearDatabasePage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
