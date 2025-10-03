@@ -284,16 +284,6 @@ export default function DeliverablesPage() {
                     </div>
 
                     <div className="flex flex-col space-y-2 ml-6">
-                      {deliverable.fileUrl && (
-                        <a
-                          href={deliverable.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors text-center"
-                        >
-                          📁 View File
-                        </a>
-                      )}
                       
                       {user?.userType === 'influencer' && deliverable.status === 'pending' && (
                         <Link
