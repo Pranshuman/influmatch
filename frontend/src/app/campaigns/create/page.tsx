@@ -232,21 +232,18 @@ export default function CreateCampaign() {
                     <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-3">
                       Budget (Rs.) *
                     </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">Rs.</span>
-                      <input
-                        id="budget"
-                        name="budget"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        required
-                        value={formData.budget}
-                        onChange={handleChange}
-                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        placeholder="Enter amount"
-                      />
-                    </div>
+                    <input
+                      id="budget"
+                      name="budget"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      required
+                      value={formData.budget}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="Enter amount"
+                    />
                   </div>
 
                   <div>

@@ -387,19 +387,16 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Your Rate (Rs.) *
                             </label>
-                            <div className="relative">
-                              <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">Rs.</span>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={proposalData.proposedBudget}
-                                onChange={(e) => setProposalData({ ...proposalData, proposedBudget: e.target.value })}
-                                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                placeholder="Enter amount"
-                                required
-                              />
-                            </div>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={proposalData.proposedBudget}
+                              onChange={(e) => setProposalData({ ...proposalData, proposedBudget: e.target.value })}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                              placeholder="Enter amount"
+                              required
+                            />
                           </div>
                           <div className="flex space-x-3 pt-2">
                             <button
