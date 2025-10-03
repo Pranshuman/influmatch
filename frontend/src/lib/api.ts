@@ -336,8 +336,8 @@ class MarketplaceAPI {
   }
 
   // Proposal Status Management Methods
-  async getMyProposals(): Promise<{ proposals: Proposal[] }> {
-    const response = await fetch(`${API_BASE}/api/proposals/my-proposals`, {
+  async getMyProposals(page: number = 1, limit: number = 12): Promise<{ proposals: Proposal[], total: number, page: number, totalPages: number }> {
+    const response = await fetch(`${API_BASE}/api/proposals/my-proposals?page=${page}&limit=${limit}`, {
       headers: this.getHeaders(),
     })
 

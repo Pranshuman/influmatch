@@ -583,10 +583,14 @@ app.post('/api/listings/:id/proposals', authenticateToken, async (req, res) => {
   }
 })
 
-// GET user's proposals
+// GET user's proposals with pagination
 app.get('/api/proposals/my-proposals', authenticateToken, async (req, res) => {
   try {
-    console.log('[MY_PROPOSALS] Fetching proposals for user:', req.user.userId)
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 12
+    const offset = (page - 1) * limit
+    
+    console.log('[MY_PROPOSALS] Fetching proposals for user:', req.user.userId, 'page:', page)
     
     if (!supabaseClient) {
       return res.status(503).json({ error: 'Database unavailable' })
@@ -598,9 +602,15 @@ app.get('/api/proposals/my-proposals', authenticateToken, async (req, res) => {
 
     const proposals = await safeSupabaseQuery('proposals', 'select', null, { influencerId: req.user.userId })
     
+    // Sort by created date (newest first) and apply pagination
+    const sortedProposals = (proposals || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    const paginatedProposals = sortedProposals.slice(offset, offset + limit)
+    const total = proposals?.length || 0
+    const totalPages = Math.ceil(total / limit)
+    
     // Get listing and brand details for each proposal
     const proposalsWithDetails = await Promise.all(
-      (proposals || []).map(async (proposal) => {
+      paginatedProposals.map(async (proposal) => {
         const listing = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
         const brand = listing[0] ? await safeSupabaseQuery('users', 'select', null, { id: listing[0].brandId }) : null
         
@@ -614,7 +624,13 @@ app.get('/api/proposals/my-proposals', authenticateToken, async (req, res) => {
       })
     )
 
-    res.json({ proposals: proposalsWithDetails })
+    res.json({ 
+      proposals: proposalsWithDetails,
+      total,
+      page,
+      totalPages,
+      limit
+    })
   } catch (error) {
     console.error('[MY_PROPOSALS] Error:', error)
     res.status(500).json({ error: 'Failed to fetch proposals' })
