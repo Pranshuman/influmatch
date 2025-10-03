@@ -260,7 +260,7 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
           <div className="bg-blue-50 rounded-lg p-3 text-center">
             <p className="text-xs text-gray-600 mb-1">📅 Deadline</p>
             <p className="font-semibold text-blue-600 text-sm">
-              {listing.deadline ? new Date(listing.deadline).toLocaleDateString() : 'Not set'}
+              {listing.deadline && !isNaN(listing.deadline) ? new Date(listing.deadline).toLocaleDateString() : 'Not set'}
             </p>
           </div>
           <div className="bg-purple-50 rounded-lg p-3 text-center">

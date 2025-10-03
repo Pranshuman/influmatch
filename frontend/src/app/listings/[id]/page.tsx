@@ -215,7 +215,7 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                       </span>
                       Application Deadline
                     </h3>
-                    <p className="text-orange-800 font-medium">{new Date(listing.deadline).toLocaleDateString()}</p>
+                    <p className="text-orange-800 font-medium">{listing.deadline && !isNaN(listing.deadline) ? new Date(listing.deadline).toLocaleDateString() : 'Not set'}</p>
                   </div>
                 )}
               </div>
