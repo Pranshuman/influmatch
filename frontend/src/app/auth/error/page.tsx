@@ -4,6 +4,9 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 function AuthErrorContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
@@ -23,6 +26,8 @@ function AuthErrorContent() {
     }
   }
 
+  const errorMessage = getErrorMessage(error)
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -35,7 +40,7 @@ function AuthErrorContent() {
             Authentication Error
           </h1>
           <p className="text-gray-600">
-            {getErrorMessage(error)}
+            {errorMessage}
           </p>
         </div>
 
@@ -51,7 +56,7 @@ function AuthErrorContent() {
                   Error Code: {error}
                 </h3>
                 <p className="text-sm text-red-700 mt-1">
-                  {getErrorMessage(error)}
+                  {errorMessage}
                 </p>
               </div>
             </div>
