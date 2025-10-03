@@ -10,6 +10,9 @@ export default function Marketplace() {
   const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const { user, isAuthenticated } = useAuth()
   const router = useRouter()
 
@@ -27,8 +30,11 @@ export default function Marketplace() {
 
     const fetchListings = async () => {
       try {
-        const data = await marketplaceAPI.getListings()
+        setLoading(true)
+        const data = await marketplaceAPI.getListings(currentPage, 12)
         setListings(data.listings)
+        setTotalPages(data.totalPages)
+        setTotal(data.total)
       } catch (err: any) {
         setError(err.message || 'Failed to load campaigns')
       } finally {
@@ -37,7 +43,7 @@ export default function Marketplace() {
     }
 
     fetchListings()
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, user, router, currentPage])
 
   if (loading) {
     return (
@@ -158,6 +164,54 @@ export default function Marketplace() {
                 </Link>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-12 flex justify-center">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                
+                <div className="flex space-x-2">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = i + 1
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+              
+              <div className="mt-4 text-center text-sm text-gray-600">
+                Showing {((currentPage - 1) * 12) + 1} to {Math.min(currentPage * 12, total)} of {total} campaigns
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -313,7 +313,11 @@ function authenticateToken(req, res, next) {
 // GET all listings
 app.get('/api/listings', async (req, res) => {
   try {
-    console.log('[LISTINGS] Fetching all listings...')
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 12
+    const offset = (page - 1) * limit
+    
+    console.log('[LISTINGS] Fetching listings - page:', page, 'limit:', limit)
     
     if (!supabaseClient) {
       return res.status(503).json({ error: 'Database unavailable' })
@@ -322,9 +326,15 @@ app.get('/api/listings', async (req, res) => {
     const listings = await safeSupabaseQuery('listings', 'select', null, {})
     console.log('[LISTINGS] Found listings:', listings?.length || 0)
 
+    // Sort by created date (newest first) and apply pagination
+    const sortedListings = (listings || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    const paginatedListings = sortedListings.slice(offset, offset + limit)
+    const total = listings?.length || 0
+    const totalPages = Math.ceil(total / limit)
+
     // Get brand details for each listing
     const listingsWithBrands = await Promise.all(
-      listings.map(async (listing) => {
+      paginatedListings.map(async (listing) => {
         const brand = await safeSupabaseQuery('users', 'select', null, { id: listing.brandId })
         return {
           ...listing,
@@ -335,7 +345,13 @@ app.get('/api/listings', async (req, res) => {
       })
     )
 
-    res.json({ listings: listingsWithBrands })
+    res.json({ 
+      listings: listingsWithBrands,
+      total,
+      page,
+      totalPages,
+      limit
+    })
   } catch (error) {
     console.error('[LISTINGS] Error:', error)
     res.status(500).json({ error: 'Failed to fetch listings' })

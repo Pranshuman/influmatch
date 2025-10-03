@@ -8,6 +8,13 @@ import { marketplaceAPI, Deliverable } from '@/lib/api'
 
 export default function DeliverablesPage() {
   const [deliverables, setDeliverables] = useState<Deliverable[]>([])
+  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [deliverableCounts, setDeliverableCounts] = useState<Array<{
+    campaignId: number
+    totalAcceptedProposals: number
+    totalDeliverables: number
+    unattendedProposals: number
+  }>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
@@ -36,14 +43,22 @@ export default function DeliverablesPage() {
       setLoading(true)
       setError(null)
       
-      let response
       if (user?.userType === 'influencer') {
-        response = await marketplaceAPI.getMyDeliverables()
+        const response = await marketplaceAPI.getMyDeliverables()
+        setDeliverables(response.deliverables)
       } else {
-        response = await marketplaceAPI.getBrandDeliverables()
+        // For brands, fetch campaigns with deliverable counts
+        const [deliverablesResponse, campaignsResponse, countsResponse] = await Promise.all([
+          marketplaceAPI.getBrandDeliverables(),
+          marketplaceAPI.getListings(),
+          marketplaceAPI.getCampaignDeliverableCounts()
+        ])
+        
+        setDeliverables(deliverablesResponse.deliverables)
+        const brandCampaigns = campaignsResponse.listings.filter(listing => listing.brandId === user?.id)
+        setCampaigns(brandCampaigns)
+        setDeliverableCounts(countsResponse.counts)
       }
-      
-      setDeliverables(response.deliverables)
     } catch (err: any) {
       console.error('Error fetching deliverables:', err)
       setError(err.message || 'Failed to load deliverables. Please try again.')
@@ -62,6 +77,18 @@ export default function DeliverablesPage() {
       case 'revision_requested': return 'bg-orange-100 text-orange-800'
       default: return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  const getPendingDeliverablesCount = (campaignId: number) => {
+    return deliverables.filter(d => 
+      d.listingId === campaignId && 
+      (d.status === 'submitted' || d.status === 'under_review')
+    ).length
+  }
+
+  const getUnattendedCount = (campaignId: number) => {
+    const count = deliverableCounts.find(c => c.campaignId === campaignId)
+    return count?.unattendedProposals || 0
   }
 
   const getStatusText = (status: string) => {
@@ -175,6 +202,79 @@ export default function DeliverablesPage() {
             <div className="text-gray-600">Need Revision</div>
           </div>
         </div>
+
+        {/* Campaign View for Brands */}
+        {user?.userType === 'brand' && campaigns.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Campaigns with Deliverables</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {campaigns.map((campaign) => {
+                const pendingCount = getPendingDeliverablesCount(campaign.id)
+                const unattendedCount = getUnattendedCount(campaign.id)
+                const hasActivity = pendingCount > 0 || unattendedCount > 0
+                
+                return (
+                  <div
+                    key={campaign.id}
+                    className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-200 relative"
+                  >
+                    {/* Notification Bubbles */}
+                    {pendingCount > 0 && (
+                      <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg">
+                        {pendingCount > 99 ? '99+' : pendingCount}
+                      </div>
+                    )}
+                    {unattendedCount > 0 && (
+                      <div className="absolute -top-2 -right-8 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg">
+                        {unattendedCount > 99 ? '99+' : unattendedCount}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 pr-2">{campaign.title}</h3>
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex-shrink-0">
+                        ${campaign.budget.toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{campaign.description}</p>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Pending Review:</span>
+                        <span className={`font-medium ${pendingCount > 0 ? 'text-orange-600' : 'text-gray-500'}`}>
+                          {pendingCount}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Need Deliverables:</span>
+                        <span className={`font-medium ${unattendedCount > 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                          {unattendedCount}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      {hasActivity && (
+                        <Link
+                          href={`/deliverables/create`}
+                          className="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        >
+                          Manage
+                        </Link>
+                      )}
+                      <Link
+                        href={`/listings/${campaign.id}`}
+                        className="flex-1 bg-gray-600 text-white text-center py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                      >
+                        View Campaign
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Deliverables List */}
         {deliverables.length === 0 ? (

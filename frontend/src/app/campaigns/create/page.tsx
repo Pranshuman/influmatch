@@ -67,10 +67,22 @@ export default function CreateCampaign() {
     setError('')
 
     try {
+      // Validate deadline if provided
+      let deadlineTimestamp = undefined
+      if (formData.deadline) {
+        const deadlineDate = new Date(formData.deadline)
+        if (isNaN(deadlineDate.getTime())) {
+          setError('Invalid deadline date. Please select a valid date and time.')
+          setIsLoading(false)
+          return
+        }
+        deadlineTimestamp = deadlineDate.getTime()
+      }
+
       const result = await marketplaceAPI.createListing({
         ...formData,
         budget: parseFloat(formData.budget),
-        deadline: formData.deadline ? new Date(formData.deadline).getTime() : undefined
+        deadline: deadlineTimestamp
       })
       
       if (result.listing) {

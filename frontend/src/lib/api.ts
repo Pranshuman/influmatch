@@ -169,8 +169,8 @@ class MarketplaceAPI {
     return data
   }
 
-  async getListings(): Promise<{ listings: Listing[] }> {
-    const response = await fetch(`${API_BASE}/api/listings`, {
+  async getListings(page: number = 1, limit: number = 12): Promise<{ listings: Listing[], total: number, page: number, totalPages: number }> {
+    const response = await fetch(`${API_BASE}/api/listings?page=${page}&limit=${limit}`, {
       headers: this.getHeaders(),
     })
 
