@@ -6,6 +6,7 @@ import { marketplaceAPI } from '@/lib/api'
 import { Listing, Proposal } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { formatDateSafely } from '@/lib/dateUtils'
 
 // Status badge component (reused from proposals page)
 const StatusBadge = ({ status }: { status: string }) => {
@@ -260,13 +261,13 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
           <div className="bg-blue-50 rounded-lg p-3 text-center">
             <p className="text-xs text-gray-600 mb-1">📅 App Deadline</p>
             <p className="font-semibold text-blue-600 text-sm">
-              {listing.deadline && !isNaN(listing.deadline) ? new Date(listing.deadline).toLocaleDateString() : 'Not set'}
+              {formatDateSafely(listing.deadline)}
             </p>
           </div>
           <div className="bg-red-50 rounded-lg p-3 text-center">
             <p className="text-xs text-gray-600 mb-1">🎯 Campaign Deadline</p>
             <p className="font-semibold text-red-600 text-sm">
-              {listing.campaignDeadline && !isNaN(listing.campaignDeadline) ? new Date(listing.campaignDeadline).toLocaleDateString() : 'Not set'}
+              {formatDateSafely(listing.campaignDeadline)}
             </p>
           </div>
           <div className="bg-purple-50 rounded-lg p-3 text-center">

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { marketplaceAPI, Listing, Proposal } from '@/lib/api'
+import { formatDateSafely } from '@/lib/dateUtils'
 
 export default function ListingDetails({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -215,7 +216,7 @@ export default function ListingDetails({ params }: { params: Promise<{ id: strin
                       </span>
                       Application Deadline
                     </h3>
-                    <p className="text-orange-800 font-medium">{listing.deadline && !isNaN(listing.deadline) ? new Date(listing.deadline).toLocaleDateString() : 'Not set'}</p>
+                    <p className="text-orange-800 font-medium">{formatDateSafely(listing.deadline)}</p>
                   </div>
                 )}
               </div>
