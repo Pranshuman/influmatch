@@ -627,10 +627,16 @@ app.get('/api/proposals/brand-accepted', authenticateToken, async (req, res) => 
 
     // Get accepted proposals for these listings
     const listingIds = listings.map(l => l.id)
-    const proposals = await safeSupabaseQuery('proposals', 'select', null, { 
-      listingId: { in: listingIds },
-      status: 'accepted'
-    })
+    let proposals = []
+    
+    // Since safeSupabaseQuery doesn't support 'in' operator, we'll query each listing individually
+    for (const listingId of listingIds) {
+      const listingProposals = await safeSupabaseQuery('proposals', 'select', null, { 
+        listingId: listingId,
+        status: 'accepted'
+      })
+      proposals = proposals.concat(listingProposals || [])
+    }
     
     // Get influencer details for each proposal
     const proposalsWithDetails = await Promise.all(
