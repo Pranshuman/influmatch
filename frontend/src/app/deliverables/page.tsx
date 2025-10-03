@@ -8,13 +8,6 @@ import { marketplaceAPI, Deliverable } from '@/lib/api'
 
 export default function DeliverablesPage() {
   const [deliverables, setDeliverables] = useState<Deliverable[]>([])
-  const [campaigns, setCampaigns] = useState<any[]>([])
-  const [deliverableCounts, setDeliverableCounts] = useState<Array<{
-    campaignId: number
-    totalAcceptedProposals: number
-    totalDeliverables: number
-    unattendedProposals: number
-  }>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
@@ -47,17 +40,9 @@ export default function DeliverablesPage() {
         const response = await marketplaceAPI.getMyDeliverables()
         setDeliverables(response.deliverables)
       } else {
-        // For brands, fetch campaigns with deliverable counts
-        const [deliverablesResponse, campaignsResponse, countsResponse] = await Promise.all([
-          marketplaceAPI.getBrandDeliverables(),
-          marketplaceAPI.getListings(),
-          marketplaceAPI.getCampaignDeliverableCounts()
-        ])
-        
-        setDeliverables(deliverablesResponse.deliverables)
-        const brandCampaigns = campaignsResponse.listings.filter(listing => listing.brandId === user?.id)
-        setCampaigns(brandCampaigns)
-        setDeliverableCounts(countsResponse.counts)
+        // For brands, fetch all deliverables
+        const response = await marketplaceAPI.getBrandDeliverables()
+        setDeliverables(response.deliverables)
       }
     } catch (err: any) {
       console.error('Error fetching deliverables:', err)
@@ -79,17 +64,6 @@ export default function DeliverablesPage() {
     }
   }
 
-  const getPendingDeliverablesCount = (campaignId: number) => {
-    return deliverables.filter(d => 
-      d.listingId === campaignId && 
-      (d.status === 'submitted' || d.status === 'under_review')
-    ).length
-  }
-
-  const getUnattendedCount = (campaignId: number) => {
-    const count = deliverableCounts.find(c => c.campaignId === campaignId)
-    return count?.unattendedProposals || 0
-  }
 
   const getStatusText = (status: string) => {
     switch (status) {
@@ -203,78 +177,6 @@ export default function DeliverablesPage() {
           </div>
         </div>
 
-        {/* Campaign View for Brands */}
-        {user?.userType === 'brand' && campaigns.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Campaigns with Deliverables</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {campaigns.map((campaign) => {
-                const pendingCount = getPendingDeliverablesCount(campaign.id)
-                const unattendedCount = getUnattendedCount(campaign.id)
-                const hasActivity = pendingCount > 0 || unattendedCount > 0
-                
-                return (
-                  <div
-                    key={campaign.id}
-                    className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-200 relative"
-                  >
-                    {/* Notification Bubbles */}
-                    {pendingCount > 0 && (
-                      <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg">
-                        {pendingCount > 99 ? '99+' : pendingCount}
-                      </div>
-                    )}
-                    {unattendedCount > 0 && (
-                      <div className="absolute -top-2 -right-8 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg">
-                        {unattendedCount > 99 ? '99+' : unattendedCount}
-                      </div>
-                    )}
-                    
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 pr-2">{campaign.title}</h3>
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex-shrink-0">
-                        ${campaign.budget.toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{campaign.description}</p>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Pending Review:</span>
-                        <span className={`font-medium ${pendingCount > 0 ? 'text-orange-600' : 'text-gray-500'}`}>
-                          {pendingCount}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Need Deliverables:</span>
-                        <span className={`font-medium ${unattendedCount > 0 ? 'text-red-600' : 'text-gray-500'}`}>
-                          {unattendedCount}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      {hasActivity && (
-                        <Link
-                          href={`/deliverables/create`}
-                          className="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                        >
-                          Manage
-                        </Link>
-                      )}
-                      <Link
-                        href={`/listings/${campaign.id}`}
-                        className="flex-1 bg-gray-600 text-white text-center py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors text-sm"
-                      >
-                        View Campaign
-                      </Link>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Deliverables List */}
         {deliverables.length === 0 ? (
@@ -295,82 +197,128 @@ export default function DeliverablesPage() {
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">All Deliverables</h2>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">All Deliverables</h2>
+              {user?.userType === 'brand' && (
+                <Link
+                  href="/deliverables/create"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Create New Deliverable
+                </Link>
+              )}
             </div>
-            <div className="divide-y divide-gray-200">
+            
+            <div className="space-y-4">
               {deliverables.map((deliverable) => (
-                <div key={deliverable.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
+                <div key={deliverable.id} className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-all duration-200">
+                  {/* Campaign Header */}
+                  <div className="mb-4 pb-3 border-b border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">📋</span>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">{deliverable.listingTitle}</h3>
+                          <p className="text-sm text-gray-600">Campaign</p>
+                        </div>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(deliverable.status)}`}>
+                        {getStatusText(deliverable.status)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Deliverable Details */}
+                  <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
+                      <div className="flex items-center space-x-3 mb-3">
                         <span className="text-2xl">{getTypeIcon(deliverable.type)}</span>
-                        <h3 className="text-lg font-semibold text-gray-900">{deliverable.title}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(deliverable.status)}`}>
-                          {getStatusText(deliverable.status)}
-                        </span>
+                        <h4 className="text-lg font-semibold text-gray-900">{deliverable.title}</h4>
                       </div>
                       
                       {deliverable.description && (
-                        <p className="text-gray-600 mb-2">{deliverable.description}</p>
+                        <p className="text-gray-600 mb-3">{deliverable.description}</p>
                       )}
                       
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span>Campaign: {deliverable.listingTitle}</span>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         {user?.userType === 'brand' && (
-                          <span>Influencer: {deliverable.influencerName}</span>
+                          <div className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-gray-500 mb-1">Influencer</p>
+                            <p className="font-medium text-gray-900">{deliverable.influencerName}</p>
+                          </div>
                         )}
                         {deliverable.dueDate && (
-                          <span>Due: {formatDate(deliverable.dueDate)}</span>
+                          <div className="bg-blue-50 rounded-lg p-3">
+                            <p className="text-gray-500 mb-1">Due Date</p>
+                            <p className="font-medium text-blue-600">{formatDate(deliverable.dueDate)}</p>
+                          </div>
                         )}
-                        <span>Created: {formatDate(deliverable.createdAt)}</span>
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <p className="text-gray-500 mb-1">Created</p>
+                          <p className="font-medium text-green-600">{formatDate(deliverable.createdAt)}</p>
+                        </div>
+                        <div className="bg-purple-50 rounded-lg p-3">
+                          <p className="text-gray-500 mb-1">Type</p>
+                          <p className="font-medium text-purple-600 capitalize">{deliverable.type}</p>
+                        </div>
                       </div>
 
                       {deliverable.submissionNotes && (
-                        <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                        <div className="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                           <p className="text-sm text-blue-800">
-                            <strong>Submission Notes:</strong> {deliverable.submissionNotes}
+                            <strong>📝 Submission Notes:</strong> {deliverable.submissionNotes}
                           </p>
                         </div>
                       )}
 
                       {deliverable.reviewNotes && (
-                        <div className="mt-2 p-3 bg-yellow-50 rounded-lg">
+                        <div className="mt-4 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
                           <p className="text-sm text-yellow-800">
-                            <strong>Review Notes:</strong> {deliverable.reviewNotes}
+                            <strong>🔍 Review Notes:</strong> {deliverable.reviewNotes}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center space-x-2 ml-4">
+                    <div className="flex flex-col space-y-2 ml-6">
                       {deliverable.fileUrl && (
                         <a
                           href={deliverable.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors text-center"
                         >
-                          View File
+                          📁 View File
                         </a>
                       )}
                       
                       {user?.userType === 'influencer' && deliverable.status === 'pending' && (
                         <Link
                           href={`/deliverables/${deliverable.id}/submit`}
-                          className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
+                          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors text-center"
                         >
-                          Submit
+                          ✏️ Submit
                         </Link>
                       )}
                       
-                      {user?.userType === 'brand' && deliverable.status === 'submitted' && (
+                      {user?.userType === 'brand' && (deliverable.status === 'submitted' || deliverable.status === 'under_review') && (
                         <Link
                           href={`/deliverables/${deliverable.id}/review`}
-                          className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 transition-colors"
+                          className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition-colors text-center"
                         >
-                          Review
+                          🔍 Review
+                        </Link>
+                      )}
+
+                      {user?.userType === 'brand' && deliverable.status === 'revision_requested' && (
+                        <Link
+                          href={`/deliverables/${deliverable.id}/review`}
+                          className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-700 transition-colors text-center"
+                        >
+                          🔄 Re-review
                         </Link>
                       )}
                     </div>
