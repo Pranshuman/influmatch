@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { SessionProvider } from 'next-auth/react'
+import SessionProvider from '@/components/providers/SessionProvider'
 
 export const metadata: Metadata = {
   title: 'Influmatch - Influencer Marketplace',
