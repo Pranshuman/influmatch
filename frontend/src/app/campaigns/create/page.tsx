@@ -244,7 +244,7 @@ export default function CreateCampaign() {
                         value={formData.budget}
                         onChange={handleChange}
                         className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        placeholder="1000"
+                        placeholder="Enter amount"
                       />
                     </div>
                   </div>
