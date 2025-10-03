@@ -568,6 +568,24 @@ export default function CreateDeliverablePage() {
             </div>
           </div>
         )}
+
+        {/* Legend */}
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 text-sm">ℹ️</span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-blue-900 mb-1">Legend</h4>
+              <p className="text-sm text-blue-800">
+                The numbers displayed on campaign tiles signify the number of <strong>unattended accepted proposals</strong> - 
+                proposals that have been accepted but don't have any deliverables created yet.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
