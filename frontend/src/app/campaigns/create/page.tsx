@@ -67,15 +67,17 @@ export default function CreateCampaign() {
     setError('')
 
     try {
-      // Validate deadline if provided
+      // Validate deadline if provided and set to end of day (EOD)
       let deadlineTimestamp = undefined
       if (formData.deadline) {
         const deadlineDate = new Date(formData.deadline)
         if (isNaN(deadlineDate.getTime())) {
-          setError('Invalid deadline date. Please select a valid date and time.')
+          setError('Invalid deadline date. Please select a valid date.')
           setIsLoading(false)
           return
         }
+        // Set to end of day (23:59:59.999)
+        deadlineDate.setHours(23, 59, 59, 999)
         deadlineTimestamp = deadlineDate.getTime()
       }
 
@@ -313,17 +315,17 @@ export default function CreateCampaign() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-3">
-                      Application Deadline *
+                      Application Deadline (End of Day) *
                     </label>
                     <input
                       id="deadline"
                       name="deadline"
-                      type="datetime-local"
+                      type="date"
                       required
                       value={formData.deadline}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      min={new Date().toISOString().slice(0, 16)}
+                      min={new Date().toISOString().slice(0, 10)}
                     />
                   </div>
 
