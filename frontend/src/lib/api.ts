@@ -362,6 +362,24 @@ class MarketplaceAPI {
     return response.json()
   }
 
+  async getCampaignDeliverableCounts(): Promise<{ counts: Array<{
+    campaignId: number
+    totalAcceptedProposals: number
+    totalDeliverables: number
+    unattendedProposals: number
+  }> }> {
+    const response = await fetch(`${API_BASE}/api/campaigns/deliverable-counts`, {
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Failed to fetch deliverable counts')
+    }
+
+    return response.json()
+  }
+
   async updateProposalStatus(proposalId: number, status: 'under_review' | 'accepted' | 'rejected' | 'withdrawn'): Promise<{ message: string; proposal: Proposal }> {
     const response = await fetch(`${API_BASE}/api/proposals/${proposalId}/status`, {
       method: 'PUT',

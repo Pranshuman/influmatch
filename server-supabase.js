@@ -662,6 +662,64 @@ app.get('/api/proposals/brand-accepted', authenticateToken, async (req, res) => 
   }
 })
 
+// GET campaign deliverable counts for brand
+app.get('/api/campaigns/deliverable-counts', authenticateToken, async (req, res) => {
+  try {
+    console.log('[CAMPAIGN_DELIVERABLE_COUNTS] Fetching deliverable counts for brand:', req.user.userId)
+    
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
+    }
+
+    if (req.user.userType !== 'brand') {
+      return res.status(403).json({ error: 'Only brands can view deliverable counts' })
+    }
+
+    // Get all listings for this brand
+    const listings = await safeSupabaseQuery('listings', 'select', null, { brandId: req.user.userId })
+    
+    if (!listings || listings.length === 0) {
+      return res.json({ counts: [] })
+    }
+
+    // Get deliverable counts for each campaign
+    const counts = await Promise.all(
+      listings.map(async (listing) => {
+        // Get accepted proposals for this listing
+        const acceptedProposals = await safeSupabaseQuery('proposals', 'select', null, { 
+          listingId: listing.id,
+          status: 'accepted'
+        })
+        
+        // Get deliverables for these proposals
+        let totalDeliverables = 0
+        for (const proposal of acceptedProposals || []) {
+          const deliverables = await safeSupabaseQuery('deliverables', 'select', null, { 
+            proposalId: proposal.id
+          })
+          totalDeliverables += (deliverables || []).length
+        }
+        
+        // Calculate unattended proposals (accepted proposals without deliverables)
+        const unattendedCount = (acceptedProposals || []).length - totalDeliverables
+        
+        return {
+          campaignId: listing.id,
+          totalAcceptedProposals: (acceptedProposals || []).length,
+          totalDeliverables: totalDeliverables,
+          unattendedProposals: Math.max(0, unattendedCount)
+        }
+      })
+    )
+
+    console.log('[CAMPAIGN_DELIVERABLE_COUNTS] Found counts for', counts.length, 'campaigns')
+    res.json({ counts })
+  } catch (error) {
+    console.error('[CAMPAIGN_DELIVERABLE_COUNTS] Error:', error)
+    res.status(500).json({ error: 'Failed to fetch deliverable counts' })
+  }
+})
+
 // PUT update proposal status
 app.put('/api/proposals/:id/status', authenticateToken, async (req, res) => {
   try {
@@ -1671,6 +1729,7 @@ async function startServer() {
       console.log(`   - POST /api/listings/:id/proposals (submit proposal)`)
       console.log(`   - GET /api/proposals/my-proposals (get user proposals)`)
       console.log(`   - GET /api/proposals/brand-accepted (get brand's accepted proposals)`)
+      console.log(`   - GET /api/campaigns/deliverable-counts (get deliverable counts for campaigns)`)
       console.log(`   - PUT /api/proposals/:id/status (update proposal status)`)
       console.log(`   - GET /api/users/:id (get user profile)`)
       console.log(`   - POST /api/messages (send message)`)

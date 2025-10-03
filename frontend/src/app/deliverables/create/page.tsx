@@ -10,6 +10,12 @@ export default function CreateDeliverablePage() {
   const [campaigns, setCampaigns] = useState<Listing[]>([])
   const [selectedCampaign, setSelectedCampaign] = useState<Listing | null>(null)
   const [proposals, setProposals] = useState<Proposal[]>([])
+  const [deliverableCounts, setDeliverableCounts] = useState<Array<{
+    campaignId: number
+    totalAcceptedProposals: number
+    totalDeliverables: number
+    unattendedProposals: number
+  }>>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,10 +54,15 @@ export default function CreateDeliverablePage() {
       setLoading(true)
       setError(null)
       
-      // Get all campaigns for this brand
-      const response = await marketplaceAPI.getListings()
-      const brandCampaigns = response.listings.filter(listing => listing.brandId === user?.id)
+      // Get all campaigns for this brand and deliverable counts
+      const [listingsResponse, countsResponse] = await Promise.all([
+        marketplaceAPI.getListings(),
+        marketplaceAPI.getCampaignDeliverableCounts()
+      ])
+      
+      const brandCampaigns = listingsResponse.listings.filter(listing => listing.brandId === user?.id)
       setCampaigns(brandCampaigns)
+      setDeliverableCounts(countsResponse.counts)
     } catch (err: any) {
       console.error('Error fetching campaigns:', err)
       setError(err.message || 'Failed to load campaigns. Please try again.')
@@ -88,6 +99,11 @@ export default function CreateDeliverablePage() {
       dueDate: ''
     })
     fetchProposalsForCampaign(campaign.id)
+  }
+
+  const getUnattendedCount = (campaignId: number) => {
+    const count = deliverableCounts.find(c => c.campaignId === campaignId)
+    return count?.unattendedProposals || 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -252,25 +268,37 @@ export default function CreateDeliverablePage() {
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Select a Campaign</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {campaigns.map((campaign) => (
-                <div
-                  key={campaign.id}
-                  className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-200"
-                  onClick={() => handleCampaignSelect(campaign)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{campaign.title}</h3>
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                      ${campaign.budget.toLocaleString()}
-                    </span>
+              {campaigns.map((campaign) => {
+                const unattendedCount = getUnattendedCount(campaign.id)
+                return (
+                  <div
+                    key={campaign.id}
+                    className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-200 relative"
+                    onClick={() => handleCampaignSelect(campaign)}
+                  >
+                    {/* Notification Bubble */}
+                    {unattendedCount > 0 && (
+                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg animate-pulse">
+                        {unattendedCount > 99 ? '99+' : unattendedCount}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 pr-2">{campaign.title}</h3>
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex-shrink-0">
+                        ${campaign.budget.toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{campaign.description}</p>
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <span>Category: {campaign.category}</span>
+                      <span className="text-blue-600 font-medium">
+                        {unattendedCount > 0 ? `${unattendedCount} pending` : 'Click to view'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">{campaign.description}</p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>Category: {campaign.category}</span>
-                    <span>Click to view proposals</span>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         ) : (
