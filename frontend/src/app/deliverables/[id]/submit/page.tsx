@@ -68,14 +68,43 @@ export default function SubmitDeliverablePage() {
     }
   }
 
+  const validateForm = () => {
+    const errors: string[] = []
+    
+    if (!formData.fileUrl.trim()) {
+      errors.push('File URL is required')
+    } else {
+      // Validate URL format
+      try {
+        new URL(formData.fileUrl.trim())
+      } catch {
+        errors.push('Please enter a valid URL')
+      }
+      
+      // Check URL length
+      if (formData.fileUrl.length > 500) {
+        errors.push('File URL is too long (max 500 characters)')
+      }
+    }
+    
+    // Validate submission notes length
+    if (formData.submissionNotes && formData.submissionNotes.length > 1000) {
+      errors.push('Submission notes must be less than 1000 characters')
+    }
+    
+    return errors
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.fileUrl.trim()) {
-      setError('File URL is required')
+    // Client-side validation
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(', '))
       return
     }
-
+    
     try {
       setSubmitting(true)
       setError(null)

@@ -68,11 +68,36 @@ export default function ReviewDeliverablePage() {
     }
   }
 
+  const validateForm = () => {
+    const errors: string[] = []
+    
+    // Validate status
+    const validStatuses = ['approved', 'rejected', 'revision_requested']
+    if (!validStatuses.includes(formData.status)) {
+      errors.push('Please select a valid review status')
+    }
+    
+    // Require review notes for rejection or revision requests
+    if ((formData.status === 'rejected' || formData.status === 'revision_requested') && 
+        (!formData.reviewNotes || formData.reviewNotes.trim().length === 0)) {
+      errors.push('Review notes are required for rejection or revision requests')
+    }
+    
+    // Validate review notes length
+    if (formData.reviewNotes && formData.reviewNotes.length > 1000) {
+      errors.push('Review notes must be less than 1000 characters')
+    }
+    
+    return errors
+  }
+
   const handleReview = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (formData.status === 'revision_requested' && !formData.reviewNotes.trim()) {
-      setError('Review notes are required when requesting revisions')
+    // Client-side validation
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(', '))
       return
     }
 

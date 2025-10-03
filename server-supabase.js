@@ -1292,14 +1292,89 @@ app.get('/api/proposals/:id/chat', authenticateToken, async (req, res) => {
   }
 })
 
+// ---- Validation Utilities ----
+const validateDeliverableData = (data) => {
+  const errors = []
+  
+  // Required fields validation
+  if (!data.proposalId || isNaN(parseInt(data.proposalId))) {
+    errors.push('Valid proposalId is required')
+  }
+  if (!data.title || data.title.trim().length === 0) {
+    errors.push('Title is required')
+  }
+  if (!data.type || !['image', 'video', 'post', 'story', 'reel', 'other'].includes(data.type)) {
+    errors.push('Valid type is required (image, video, post, story, reel, other)')
+  }
+  
+  // Length validation
+  if (data.title && data.title.length > 200) {
+    errors.push('Title must be less than 200 characters')
+  }
+  if (data.description && data.description.length > 1000) {
+    errors.push('Description must be less than 1000 characters')
+  }
+  if (data.submissionNotes && data.submissionNotes.length > 1000) {
+    errors.push('Submission notes must be less than 1000 characters')
+  }
+  if (data.reviewNotes && data.reviewNotes.length > 1000) {
+    errors.push('Review notes must be less than 1000 characters')
+  }
+  
+  // Date validation
+  if (data.dueDate) {
+    const dueDate = new Date(data.dueDate)
+    if (isNaN(dueDate.getTime())) {
+      errors.push('Invalid due date format')
+    } else if (dueDate < new Date()) {
+      errors.push('Due date cannot be in the past')
+    }
+  }
+  
+  // File URL validation
+  if (data.fileUrl && data.fileUrl.length > 500) {
+    errors.push('File URL is too long')
+  }
+  
+  return errors
+}
+
+const validateStatusTransition = (currentStatus, newStatus) => {
+  const validTransitions = {
+    'pending': ['submitted'],
+    'submitted': ['under_review', 'revision_requested'],
+    'under_review': ['approved', 'rejected', 'revision_requested'],
+    'approved': [], // Final state
+    'rejected': [], // Final state
+    'revision_requested': ['submitted', 'rejected']
+  }
+  
+  return validTransitions[currentStatus]?.includes(newStatus) || false
+}
+
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') return input
+  // Remove potential XSS attempts
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .trim()
+}
+
 // ---- Deliverables Routes ----
 // GET deliverables for a specific proposal
 app.get('/api/deliverables/proposal/:proposalId', authenticateToken, async (req, res) => {
   try {
     const proposalId = parseInt(req.params.proposalId)
     
-    if (isNaN(proposalId)) {
+    // Enhanced input validation
+    if (isNaN(proposalId) || proposalId <= 0) {
       return res.status(400).json({ error: 'Invalid proposal ID' })
+    }
+
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
     }
 
     // Get the proposal to verify access
@@ -1310,10 +1385,15 @@ app.get('/api/deliverables/proposal/:proposalId', authenticateToken, async (req,
 
     const proposal = proposals[0]
 
+    // Validate proposal status
+    if (proposal.status === 'withdrawn') {
+      return res.status(410).json({ error: 'Proposal has been withdrawn' })
+    }
+
     // Get the listing to check brand ownership
     const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
     if (!listings || listings.length === 0) {
-      return res.status(404).json({ error: 'Listing not found' })
+      return res.status(404).json({ error: 'Campaign not found' })
     }
 
     const listing = listings[0]
@@ -1323,13 +1403,25 @@ app.get('/api/deliverables/proposal/:proposalId', authenticateToken, async (req,
     const isInfluencer = req.user.userType === 'influencer' && req.user.userId === proposal.influencerId
     
     if (!isBrandOwner && !isInfluencer) {
-      return res.status(403).json({ error: 'Access denied' })
+      return res.status(403).json({ error: 'Access denied. You can only view deliverables for your own proposals or campaigns.' })
     }
 
-    // Get deliverables for this proposal
+    // Get deliverables for this proposal with error handling
     const deliverables = await safeSupabaseQuery('deliverables', 'select', null, { proposalId })
+    if (!deliverables) {
+      return res.status(500).json({ error: 'Failed to fetch deliverables from database' })
+    }
 
-    res.json({ deliverables: deliverables || [] })
+    // Sanitize deliverable data
+    const sanitizedDeliverables = deliverables.map(deliverable => ({
+      ...deliverable,
+      title: sanitizeInput(deliverable.title),
+      description: sanitizeInput(deliverable.description),
+      submissionNotes: sanitizeInput(deliverable.submissionNotes),
+      reviewNotes: sanitizeInput(deliverable.reviewNotes)
+    }))
+
+    res.json({ deliverables: sanitizedDeliverables })
   } catch (error) {
     console.error('[GET_DELIVERABLES] Error:', error)
     res.status(500).json({ error: 'Failed to fetch deliverables' })
@@ -1339,31 +1431,49 @@ app.get('/api/deliverables/proposal/:proposalId', authenticateToken, async (req,
 // POST create new deliverable (brand only)
 app.post('/api/deliverables', authenticateToken, async (req, res) => {
   try {
-    const { proposalId, title, description, type, dueDate } = req.body
-
-    // Validate required fields
-    if (!proposalId || !title || !type) {
-      return res.status(400).json({ error: 'Missing required fields' })
+    // Sanitize input data
+    const sanitizedData = {
+      proposalId: req.body.proposalId,
+      title: sanitizeInput(req.body.title),
+      description: sanitizeInput(req.body.description),
+      type: req.body.type,
+      dueDate: req.body.dueDate
     }
 
-    // Validate type
-    const validTypes = ['image', 'video', 'post', 'story', 'reel', 'other']
-    if (!validTypes.includes(type)) {
-      return res.status(400).json({ error: 'Invalid deliverable type' })
+    // Comprehensive validation
+    const validationErrors = validateDeliverableData(sanitizedData)
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: validationErrors 
+      })
+    }
+
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
     }
 
     // Get the proposal to verify access
-    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: proposalId })
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: sanitizedData.proposalId })
     if (!proposals || proposals.length === 0) {
       return res.status(404).json({ error: 'Proposal not found' })
     }
 
     const proposal = proposals[0]
 
+    // Validate proposal status
+    if (proposal.status === 'withdrawn') {
+      return res.status(410).json({ error: 'Cannot create deliverables for withdrawn proposals' })
+    }
+
+    if (proposal.status !== 'accepted') {
+      return res.status(400).json({ error: 'Can only create deliverables for accepted proposals' })
+    }
+
     // Get the listing to check brand ownership
     const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
     if (!listings || listings.length === 0) {
-      return res.status(404).json({ error: 'Listing not found' })
+      return res.status(404).json({ error: 'Campaign not found' })
     }
 
     const listing = listings[0]
@@ -1373,18 +1483,21 @@ app.post('/api/deliverables', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied. Only the brand owner can create deliverables.' })
     }
 
-    // Check if proposal is accepted
-    if (proposal.status !== 'accepted') {
-      return res.status(400).json({ error: 'Can only create deliverables for accepted proposals' })
+    // Check for duplicate deliverables (same title for same proposal)
+    const existingDeliverables = await safeSupabaseQuery('deliverables', 'select', null, { 
+      proposalId: sanitizedData.proposalId 
+    })
+    if (existingDeliverables && existingDeliverables.some(d => d.title === sanitizedData.title)) {
+      return res.status(409).json({ error: 'A deliverable with this title already exists for this proposal' })
     }
 
-    // Create deliverable
+    // Create deliverable with validated data
     const deliverableData = {
-      proposalId: parseInt(proposalId),
-      title,
-      description: description || null,
-      type,
-      dueDate: dueDate ? new Date(dueDate).toISOString() : null
+      proposalId: parseInt(sanitizedData.proposalId),
+      title: sanitizedData.title,
+      description: sanitizedData.description || null,
+      type: sanitizedData.type,
+      dueDate: sanitizedData.dueDate ? new Date(sanitizedData.dueDate).toISOString() : null
     }
 
     const deliverables = await safeSupabaseQuery('deliverables', 'insert', deliverableData)
@@ -1521,12 +1634,38 @@ app.delete('/api/deliverables/:id', authenticateToken, async (req, res) => {
 // POST submit deliverable (influencer only)
 app.post('/api/deliverables/:id/submit', authenticateToken, async (req, res) => {
   try {
-    const { fileUrl, submissionNotes } = req.body
     const deliverableId = parseInt(req.params.id)
+    
+    // Enhanced input validation
+    if (isNaN(deliverableId) || deliverableId <= 0) {
+      return res.status(400).json({ error: 'Invalid deliverable ID' })
+    }
+
+    // Sanitize input data
+    const sanitizedData = {
+      fileUrl: req.body.fileUrl,
+      submissionNotes: sanitizeInput(req.body.submissionNotes)
+    }
 
     // Validate required fields
-    if (!fileUrl) {
+    if (!sanitizedData.fileUrl || sanitizedData.fileUrl.trim().length === 0) {
       return res.status(400).json({ error: 'File URL is required' })
+    }
+
+    // Validate file URL format and length
+    if (sanitizedData.fileUrl.length > 500) {
+      return res.status(400).json({ error: 'File URL is too long' })
+    }
+
+    // Basic URL validation
+    try {
+      new URL(sanitizedData.fileUrl)
+    } catch {
+      return res.status(400).json({ error: 'Invalid file URL format' })
+    }
+
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
     }
 
     // Get the deliverable to verify access
@@ -1545,26 +1684,50 @@ app.post('/api/deliverables/:id/submit', authenticateToken, async (req, res) => 
 
     const proposal = proposals[0]
 
+    // Validate proposal status
+    if (proposal.status === 'withdrawn') {
+      return res.status(410).json({ error: 'Cannot submit deliverables for withdrawn proposals' })
+    }
+
+    if (proposal.status !== 'accepted') {
+      return res.status(400).json({ error: 'Can only submit deliverables for accepted proposals' })
+    }
+
     // Check if user is the influencer
     if (req.user.userType !== 'influencer' || req.user.userId !== proposal.influencerId) {
       return res.status(403).json({ error: 'Access denied. Only the assigned influencer can submit deliverables.' })
     }
 
     // Check if deliverable can be submitted
-    if (deliverable.status !== 'pending') {
-      return res.status(400).json({ error: 'Can only submit pending deliverables' })
+    if (deliverable.status !== 'pending' && deliverable.status !== 'revision_requested') {
+      return res.status(400).json({ 
+        error: 'Can only submit pending or revision-requested deliverables',
+        currentStatus: deliverable.status
+      })
     }
 
-    // Submit deliverable
+    // Check if deliverable is past due date
+    if (deliverable.dueDate && new Date(deliverable.dueDate) < new Date()) {
+      return res.status(400).json({ 
+        error: 'Deliverable is past due date',
+        dueDate: deliverable.dueDate
+      })
+    }
+
+    // Submit deliverable with validated data
     const updateData = {
-      fileUrl,
-      submissionNotes: submissionNotes || null,
+      fileUrl: sanitizedData.fileUrl.trim(),
+      submissionNotes: sanitizedData.submissionNotes || null,
       status: 'submitted',
       submittedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
 
     const updatedDeliverables = await safeSupabaseQuery('deliverables', 'update', updateData, { id: deliverableId })
+    if (!updatedDeliverables || updatedDeliverables.length === 0) {
+      return res.status(500).json({ error: 'Failed to update deliverable in database' })
+    }
+
     const updatedDeliverable = updatedDeliverables[0]
 
     res.json({
@@ -1580,18 +1743,35 @@ app.post('/api/deliverables/:id/submit', authenticateToken, async (req, res) => 
 // PUT review deliverable (brand only)
 app.put('/api/deliverables/:id/review', authenticateToken, async (req, res) => {
   try {
-    const { status, reviewNotes } = req.body
     const deliverableId = parseInt(req.params.id)
+    
+    // Enhanced input validation
+    if (isNaN(deliverableId) || deliverableId <= 0) {
+      return res.status(400).json({ error: 'Invalid deliverable ID' })
+    }
+
+    // Sanitize input data
+    const sanitizedData = {
+      status: req.body.status,
+      reviewNotes: sanitizeInput(req.body.reviewNotes)
+    }
 
     // Validate required fields
-    if (!status) {
+    if (!sanitizedData.status) {
       return res.status(400).json({ error: 'Status is required' })
     }
 
     // Validate status
     const validStatuses = ['approved', 'rejected', 'revision_requested']
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' })
+    if (!validStatuses.includes(sanitizedData.status)) {
+      return res.status(400).json({ 
+        error: 'Invalid status. Must be one of: approved, rejected, revision_requested',
+        validStatuses
+      })
+    }
+
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
     }
 
     // Get the deliverable to verify access
@@ -1602,6 +1782,15 @@ app.put('/api/deliverables/:id/review', authenticateToken, async (req, res) => {
 
     const deliverable = deliverables[0]
 
+    // Validate status transition
+    if (!validateStatusTransition(deliverable.status, sanitizedData.status)) {
+      return res.status(400).json({ 
+        error: 'Invalid status transition',
+        currentStatus: deliverable.status,
+        requestedStatus: sanitizedData.status
+      })
+    }
+
     // Get the proposal and listing to check brand ownership
     const proposals = await safeSupabaseQuery('proposals', 'select', null, { id: deliverable.proposalId })
     if (!proposals || proposals.length === 0) {
@@ -1609,9 +1798,15 @@ app.put('/api/deliverables/:id/review', authenticateToken, async (req, res) => {
     }
 
     const proposal = proposals[0]
+    
+    // Validate proposal status
+    if (proposal.status === 'withdrawn') {
+      return res.status(410).json({ error: 'Cannot review deliverables for withdrawn proposals' })
+    }
+
     const listings = await safeSupabaseQuery('listings', 'select', null, { id: proposal.listingId })
     if (!listings || listings.length === 0) {
-      return res.status(404).json({ error: 'Listing not found' })
+      return res.status(404).json({ error: 'Campaign not found' })
     }
 
     const listing = listings[0]
@@ -1622,19 +1817,34 @@ app.put('/api/deliverables/:id/review', authenticateToken, async (req, res) => {
     }
 
     // Check if deliverable can be reviewed
-    if (deliverable.status !== 'submitted') {
-      return res.status(400).json({ error: 'Can only review submitted deliverables' })
+    if (deliverable.status !== 'submitted' && deliverable.status !== 'under_review') {
+      return res.status(400).json({ 
+        error: 'Can only review submitted or under-review deliverables',
+        currentStatus: deliverable.status
+      })
     }
 
-    // Review deliverable
+    // Require review notes for rejection or revision requests
+    if ((sanitizedData.status === 'rejected' || sanitizedData.status === 'revision_requested') && 
+        (!sanitizedData.reviewNotes || sanitizedData.reviewNotes.trim().length === 0)) {
+      return res.status(400).json({ 
+        error: 'Review notes are required for rejection or revision requests' 
+      })
+    }
+
+    // Review deliverable with validated data
     const updateData = {
-      status,
-      reviewNotes: reviewNotes || null,
+      status: sanitizedData.status,
+      reviewNotes: sanitizedData.reviewNotes || null,
       reviewedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
 
     const updatedDeliverables = await safeSupabaseQuery('deliverables', 'update', updateData, { id: deliverableId })
+    if (!updatedDeliverables || updatedDeliverables.length === 0) {
+      return res.status(500).json({ error: 'Failed to update deliverable in database' })
+    }
+
     const updatedDeliverable = updatedDeliverables[0]
 
     res.json({

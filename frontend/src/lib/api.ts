@@ -585,7 +585,12 @@ class MarketplaceAPI {
       let errorMessage = 'Failed to submit deliverable'
       try {
         const error = await response.json()
-        errorMessage = error.message || error.error || errorMessage
+        // Handle validation errors with details
+        if (error.details && Array.isArray(error.details)) {
+          errorMessage = `Validation failed: ${error.details.join(', ')}`
+        } else {
+          errorMessage = error.message || error.error || errorMessage
+        }
       } catch (e) {
         errorMessage = response.statusText || errorMessage
       }
@@ -609,7 +614,12 @@ class MarketplaceAPI {
       let errorMessage = 'Failed to review deliverable'
       try {
         const error = await response.json()
-        errorMessage = error.message || error.error || errorMessage
+        // Handle validation errors with details
+        if (error.details && Array.isArray(error.details)) {
+          errorMessage = `Validation failed: ${error.details.join(', ')}`
+        } else {
+          errorMessage = error.message || error.error || errorMessage
+        }
       } catch (e) {
         errorMessage = response.statusText || errorMessage
       }
