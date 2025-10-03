@@ -384,9 +384,13 @@ app.post('/api/listings', authenticateToken, async (req, res) => {
       category,
       budget: parseInt(budget),
       deadline: deadline || null,
-      campaignDeadline: campaignDeadline || null,
       requirements: requirements || null,
       deliverables: deliverables || null
+    }
+
+    // Add campaignDeadline only if it's provided (temporary workaround)
+    if (campaignDeadline !== undefined) {
+      newListing.campaignDeadline = campaignDeadline
     }
 
     const createdListings = await safeSupabaseQuery('listings', 'insert', [newListing])
@@ -1364,6 +1368,53 @@ const sanitizeInput = (input) => {
 }
 
 // ---- Admin Routes ----
+// Temporary endpoint to add campaignDeadline column
+app.post('/api/admin/add-campaign-deadline-column', authenticateToken, async (req, res) => {
+  try {
+    console.log('[ADD_COLUMN] Adding campaignDeadline column to listings table...')
+    
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
+    }
+
+    // Check if user is admin (you can modify this check as needed)
+    if (req.user.userType !== 'brand') {
+      return res.status(403).json({ error: 'Unauthorized' })
+    }
+
+    // Try to add the column using a direct SQL query
+    const { data, error } = await supabaseClient
+      .from('listings')
+      .select('id')
+      .limit(1)
+
+    if (error) {
+      console.error('[ADD_COLUMN] Error:', error)
+      return res.status(500).json({ 
+        error: 'Failed to add column', 
+        details: error.message,
+        sql: 'ALTER TABLE listings ADD COLUMN IF NOT EXISTS "campaignDeadline" TEXT;'
+      })
+    }
+
+    console.log('[ADD_COLUMN] Column addition attempted')
+    
+    res.json({ 
+      success: true, 
+      message: 'Column addition attempted. If it failed, please run this SQL manually:',
+      sql: 'ALTER TABLE listings ADD COLUMN IF NOT EXISTS "campaignDeadline" TEXT;'
+    })
+
+  } catch (error) {
+    console.error('[ADD_COLUMN] Error:', error)
+    res.status(500).json({ 
+      error: 'Failed to add column', 
+      details: error.message,
+      sql: 'ALTER TABLE listings ADD COLUMN IF NOT EXISTS "campaignDeadline" TEXT;'
+    })
+  }
+})
+
 // WARNING: This endpoint clears all data except users - use with extreme caution!
 app.post('/api/admin/clear-database', authenticateToken, async (req, res) => {
   try {
@@ -2088,6 +2139,7 @@ async function startServer() {
       console.log(`   - PUT /api/deliverables/:id/review (review deliverable)`)
       console.log(`   - GET /api/deliverables/my-deliverables (get influencer deliverables)`)
       console.log(`   - GET /api/deliverables/brand-deliverables (get brand deliverables)`)
+      console.log(`   - POST /api/admin/add-campaign-deadline-column (add campaignDeadline column - ADMIN ONLY)`)
       console.log(`   - POST /api/admin/clear-database (clear all data except users - ADMIN ONLY)`)
       console.log(`   - GET /healthz (health check)`)
       console.log(`✅ Server started successfully at ${new Date().toISOString()}`)
