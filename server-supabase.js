@@ -1347,7 +1347,7 @@ const validateDeliverableData = (data) => {
 const validateStatusTransition = (currentStatus, newStatus) => {
   const validTransitions = {
     'pending': ['submitted'],
-    'submitted': ['under_review', 'revision_requested'],
+    'submitted': ['under_review', 'revision_requested', 'approved', 'rejected'],
     'under_review': ['approved', 'rejected', 'revision_requested'],
     'approved': [], // Final state
     'rejected': [], // Final state
