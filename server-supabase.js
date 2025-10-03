@@ -371,7 +371,7 @@ app.post('/api/listings', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Only brands can create listings' })
     }
 
-    const { title, description, category, budget, deadline, requirements, deliverables } = req.body
+    const { title, description, category, budget, deadline, campaignDeadline, requirements, deliverables } = req.body
 
     if (!title || !description || !category || !budget) {
       return res.status(400).json({ error: 'Missing required fields' })
@@ -384,6 +384,7 @@ app.post('/api/listings', authenticateToken, async (req, res) => {
       category,
       budget: parseInt(budget),
       deadline: deadline || null,
+      campaignDeadline: campaignDeadline || null,
       requirements: requirements || null,
       deliverables: deliverables || null
     }

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS listings (
     category TEXT,
     budget BIGINT,
     deadline TEXT,
+    "campaignDeadline" TEXT,
     requirements TEXT,
     deliverables TEXT,
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),

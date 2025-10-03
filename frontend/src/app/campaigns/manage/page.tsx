@@ -252,15 +252,21 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
           </span>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
           <div className="bg-green-50 rounded-lg p-3 text-center">
             <p className="text-xs text-gray-600 mb-1">💰 Budget</p>
             <p className="font-bold text-green-600 text-sm">${listing.budget?.toLocaleString() || '0'}</p>
           </div>
           <div className="bg-blue-50 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-600 mb-1">📅 Deadline</p>
+            <p className="text-xs text-gray-600 mb-1">📅 App Deadline</p>
             <p className="font-semibold text-blue-600 text-sm">
               {listing.deadline && !isNaN(listing.deadline) ? new Date(listing.deadline).toLocaleDateString() : 'Not set'}
+            </p>
+          </div>
+          <div className="bg-red-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-gray-600 mb-1">🎯 Campaign Deadline</p>
+            <p className="font-semibold text-red-600 text-sm">
+              {listing.campaignDeadline && !isNaN(listing.campaignDeadline) ? new Date(listing.campaignDeadline).toLocaleDateString() : 'Not set'}
             </p>
           </div>
           <div className="bg-purple-50 rounded-lg p-3 text-center">

@@ -14,7 +14,7 @@ export default function CreateCampaign() {
     category: 'lifestyle',
     requirements: '',
     deliverables: '',
-    timeline: '',
+    campaignDeadline: '',
     deadline: ''
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -67,12 +67,12 @@ export default function CreateCampaign() {
     setError('')
 
     try {
-      // Validate deadline if provided and set to end of day (EOD)
+      // Validate application deadline if provided and set to end of day (EOD)
       let deadlineTimestamp = undefined
       if (formData.deadline) {
         const deadlineDate = new Date(formData.deadline)
         if (isNaN(deadlineDate.getTime())) {
-          setError('Invalid deadline date. Please select a valid date.')
+          setError('Invalid application deadline date. Please select a valid date.')
           setIsLoading(false)
           return
         }
@@ -81,10 +81,25 @@ export default function CreateCampaign() {
         deadlineTimestamp = deadlineDate.getTime()
       }
 
+      // Validate campaign deadline if provided and set to end of day (EOD)
+      let campaignDeadlineTimestamp = undefined
+      if (formData.campaignDeadline) {
+        const campaignDeadlineDate = new Date(formData.campaignDeadline)
+        if (isNaN(campaignDeadlineDate.getTime())) {
+          setError('Invalid campaign deadline date. Please select a valid date.')
+          setIsLoading(false)
+          return
+        }
+        // Set to end of day (23:59:59.999)
+        campaignDeadlineDate.setHours(23, 59, 59, 999)
+        campaignDeadlineTimestamp = campaignDeadlineDate.getTime()
+      }
+
       const result = await marketplaceAPI.createListing({
         ...formData,
         budget: parseFloat(formData.budget),
-        deadline: deadlineTimestamp
+        deadline: deadlineTimestamp,
+        campaignDeadline: campaignDeadlineTimestamp
       })
       
       if (result.listing) {
@@ -330,17 +345,17 @@ export default function CreateCampaign() {
                   </div>
 
                   <div>
-                    <label htmlFor="timeline" className="block text-sm font-medium text-gray-700 mb-3">
-                      Campaign Timeline
+                    <label htmlFor="campaignDeadline" className="block text-sm font-medium text-gray-700 mb-3">
+                      Campaign Deadline (End of Day)
                     </label>
                     <input
-                      id="timeline"
-                      name="timeline"
-                      type="text"
-                      value={formData.timeline}
+                      id="campaignDeadline"
+                      name="campaignDeadline"
+                      type="date"
+                      value={formData.campaignDeadline}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="e.g., 2 weeks from start date"
+                      min={new Date().toISOString().slice(0, 10)}
                     />
                   </div>
                 </div>

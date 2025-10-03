@@ -29,6 +29,7 @@ export interface Listing {
   category: string
   budget: number
   deadline?: number
+  campaignDeadline?: number
   requirements?: string
   deliverables?: string
   brandId: number
@@ -211,6 +212,7 @@ class MarketplaceAPI {
     category: string
     budget: number
     deadline?: number
+    campaignDeadline?: number
     requirements?: string
     deliverables?: string
   }): Promise<{ listing: Listing }> {
