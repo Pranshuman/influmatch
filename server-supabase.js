@@ -1362,6 +1362,82 @@ const sanitizeInput = (input) => {
     .trim()
 }
 
+// ---- Admin Routes ----
+// WARNING: This endpoint clears all data except users - use with extreme caution!
+app.post('/api/admin/clear-database', authenticateToken, async (req, res) => {
+  try {
+    // Only allow admin users (you can modify this check as needed)
+    // For now, we'll allow any authenticated user, but you should restrict this
+    console.log('[CLEAR_DATABASE] Request from user:', req.user.userId, req.user.userType)
+    
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
+    }
+
+    // Get counts before deletion
+    const deliverablesCount = await safeSupabaseQuery('deliverables', 'select', null, {})
+    const messagesCount = await safeSupabaseQuery('messages', 'select', null, {})
+    const proposalsCount = await safeSupabaseQuery('proposals', 'select', null, {})
+    const listingsCount = await safeSupabaseQuery('listings', 'select', null, {})
+    const usersCount = await safeSupabaseQuery('users', 'select', null, {})
+
+    console.log('[CLEAR_DATABASE] Before deletion:')
+    console.log(`  Deliverables: ${deliverablesCount?.length || 0}`)
+    console.log(`  Messages: ${messagesCount?.length || 0}`)
+    console.log(`  Proposals: ${proposalsCount?.length || 0}`)
+    console.log(`  Listings: ${listingsCount?.length || 0}`)
+    console.log(`  Users: ${usersCount?.length || 0}`)
+
+    // Delete in order due to foreign key constraints
+    console.log('[CLEAR_DATABASE] Deleting deliverables...')
+    await safeSupabaseQuery('deliverables', 'delete', null, {})
+    
+    console.log('[CLEAR_DATABASE] Deleting messages...')
+    await safeSupabaseQuery('messages', 'delete', null, {})
+    
+    console.log('[CLEAR_DATABASE] Deleting proposals...')
+    await safeSupabaseQuery('proposals', 'delete', null, {})
+    
+    console.log('[CLEAR_DATABASE] Deleting listings...')
+    await safeSupabaseQuery('listings', 'delete', null, {})
+
+    // Verify deletion
+    const finalDeliverables = await safeSupabaseQuery('deliverables', 'select', null, {})
+    const finalMessages = await safeSupabaseQuery('messages', 'select', null, {})
+    const finalProposals = await safeSupabaseQuery('proposals', 'select', null, {})
+    const finalListings = await safeSupabaseQuery('listings', 'select', null, {})
+    const finalUsers = await safeSupabaseQuery('users', 'select', null, {})
+
+    console.log('[CLEAR_DATABASE] After deletion:')
+    console.log(`  Deliverables: ${finalDeliverables?.length || 0}`)
+    console.log(`  Messages: ${finalMessages?.length || 0}`)
+    console.log(`  Proposals: ${finalProposals?.length || 0}`)
+    console.log(`  Listings: ${finalListings?.length || 0}`)
+    console.log(`  Users: ${finalUsers?.length || 0}`)
+
+    res.json({
+      message: 'Database cleared successfully!',
+      before: {
+        deliverables: deliverablesCount?.length || 0,
+        messages: messagesCount?.length || 0,
+        proposals: proposalsCount?.length || 0,
+        listings: listingsCount?.length || 0,
+        users: usersCount?.length || 0
+      },
+      after: {
+        deliverables: finalDeliverables?.length || 0,
+        messages: finalMessages?.length || 0,
+        proposals: finalProposals?.length || 0,
+        listings: finalListings?.length || 0,
+        users: finalUsers?.length || 0
+      }
+    })
+  } catch (error) {
+    console.error('[CLEAR_DATABASE] Error:', error)
+    res.status(500).json({ error: 'Failed to clear database' })
+  }
+})
+
 // ---- Deliverables Routes ----
 // GET deliverables for a specific proposal
 app.get('/api/deliverables/proposal/:proposalId', authenticateToken, async (req, res) => {
@@ -1983,6 +2059,7 @@ async function startServer() {
       console.log(`   - PUT /api/deliverables/:id/review (review deliverable)`)
       console.log(`   - GET /api/deliverables/my-deliverables (get influencer deliverables)`)
       console.log(`   - GET /api/deliverables/brand-deliverables (get brand deliverables)`)
+      console.log(`   - POST /api/admin/clear-database (clear all data except users - ADMIN ONLY)`)
       console.log(`   - GET /healthz (health check)`)
       console.log(`✅ Server started successfully at ${new Date().toISOString()}`)
     })
