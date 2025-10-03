@@ -1003,9 +1003,7 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
   }
 })
 
-You have already submitted a proposal for this campaign.
-
-Edit your proposal// ---- Messages Routes ----
+// ---- Messages Routes ----
 // POST send message
 app.post('/api/messages', authenticateToken, async (req, res) => {
   try {
