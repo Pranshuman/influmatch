@@ -349,6 +349,19 @@ class MarketplaceAPI {
     return response.json()
   }
 
+  async getBrandAcceptedProposals(): Promise<{ proposals: Proposal[] }> {
+    const response = await fetch(`${API_BASE}/api/proposals/brand-accepted`, {
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Failed to fetch accepted proposals')
+    }
+
+    return response.json()
+  }
+
   async updateProposalStatus(proposalId: number, status: 'under_review' | 'accepted' | 'rejected' | 'withdrawn'): Promise<{ message: string; proposal: Proposal }> {
     const response = await fetch(`${API_BASE}/api/proposals/${proposalId}/status`, {
       method: 'PUT',

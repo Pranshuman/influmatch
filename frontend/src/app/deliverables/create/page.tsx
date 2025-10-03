@@ -46,25 +46,9 @@ export default function CreateDeliverablePage() {
       setLoading(true)
       setError(null)
       
-      // Get all listings and filter for accepted proposals
-      const response = await marketplaceAPI.getListings()
-      const acceptedProposals: Proposal[] = []
-      
-      response.listings.forEach(listing => {
-        if (listing.proposals) {
-          listing.proposals.forEach(proposal => {
-            if (proposal.status === 'accepted' && listing.brandId === user?.id) {
-              acceptedProposals.push({
-                ...proposal,
-                listingTitle: listing.title,
-                listingDescription: listing.description
-              })
-            }
-          })
-        }
-      })
-      
-      setProposals(acceptedProposals)
+      // Get accepted proposals for this brand
+      const response = await marketplaceAPI.getBrandAcceptedProposals()
+      setProposals(response.proposals)
     } catch (err: any) {
       console.error('Error fetching proposals:', err)
       setError(err.message || 'Failed to load proposals. Please try again.')

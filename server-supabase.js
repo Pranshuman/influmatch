@@ -605,6 +605,57 @@ app.get('/api/proposals/my-proposals', authenticateToken, async (req, res) => {
   }
 })
 
+// GET brand's accepted proposals
+app.get('/api/proposals/brand-accepted', authenticateToken, async (req, res) => {
+  try {
+    console.log('[BRAND_ACCEPTED_PROPOSALS] Fetching accepted proposals for brand:', req.user.userId)
+    
+    if (!supabaseClient) {
+      return res.status(503).json({ error: 'Database unavailable' })
+    }
+
+    if (req.user.userType !== 'brand') {
+      return res.status(403).json({ error: 'Only brands can view their accepted proposals' })
+    }
+
+    // Get all listings for this brand
+    const listings = await safeSupabaseQuery('listings', 'select', null, { brandId: req.user.userId })
+    
+    if (!listings || listings.length === 0) {
+      return res.json({ proposals: [] })
+    }
+
+    // Get accepted proposals for these listings
+    const listingIds = listings.map(l => l.id)
+    const proposals = await safeSupabaseQuery('proposals', 'select', null, { 
+      listingId: { in: listingIds },
+      status: 'accepted'
+    })
+    
+    // Get influencer details for each proposal
+    const proposalsWithDetails = await Promise.all(
+      (proposals || []).map(async (proposal) => {
+        const influencer = await safeSupabaseQuery('users', 'select', null, { id: proposal.influencerId })
+        const listing = listings.find(l => l.id === proposal.listingId)
+        
+        return {
+          ...proposal,
+          influencer: influencer?.[0] || null,
+          listingTitle: listing?.title,
+          listingDescription: listing?.description,
+          listingBudget: listing?.budget
+        }
+      })
+    )
+
+    console.log('[BRAND_ACCEPTED_PROPOSALS] Found accepted proposals:', proposalsWithDetails.length)
+    res.json({ proposals: proposalsWithDetails })
+  } catch (error) {
+    console.error('[BRAND_ACCEPTED_PROPOSALS] Error:', error)
+    res.status(500).json({ error: 'Failed to fetch accepted proposals' })
+  }
+})
+
 // PUT update proposal status
 app.put('/api/proposals/:id/status', authenticateToken, async (req, res) => {
   try {
@@ -1613,6 +1664,7 @@ async function startServer() {
       console.log(`   - GET /api/listings/:id (get campaign details)`)
       console.log(`   - POST /api/listings/:id/proposals (submit proposal)`)
       console.log(`   - GET /api/proposals/my-proposals (get user proposals)`)
+      console.log(`   - GET /api/proposals/brand-accepted (get brand's accepted proposals)`)
       console.log(`   - PUT /api/proposals/:id/status (update proposal status)`)
       console.log(`   - GET /api/users/:id (get user profile)`)
       console.log(`   - POST /api/messages (send message)`)
