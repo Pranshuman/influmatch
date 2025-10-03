@@ -1390,16 +1390,44 @@ app.post('/api/admin/clear-database', authenticateToken, async (req, res) => {
 
     // Delete in order due to foreign key constraints
     console.log('[CLEAR_DATABASE] Deleting deliverables...')
-    await safeSupabaseQuery('deliverables', 'delete', null, {})
+    const { error: deliverablesError } = await supabaseClient
+      .from('deliverables')
+      .delete()
+      .neq('id', 0) // Delete all records (id is never 0)
+    
+    if (deliverablesError) {
+      throw new Error(`Failed to delete deliverables: ${deliverablesError.message}`)
+    }
     
     console.log('[CLEAR_DATABASE] Deleting messages...')
-    await safeSupabaseQuery('messages', 'delete', null, {})
+    const { error: messagesError } = await supabaseClient
+      .from('messages')
+      .delete()
+      .neq('id', 0) // Delete all records (id is never 0)
+    
+    if (messagesError) {
+      throw new Error(`Failed to delete messages: ${messagesError.message}`)
+    }
     
     console.log('[CLEAR_DATABASE] Deleting proposals...')
-    await safeSupabaseQuery('proposals', 'delete', null, {})
+    const { error: proposalsError } = await supabaseClient
+      .from('proposals')
+      .delete()
+      .neq('id', 0) // Delete all records (id is never 0)
+    
+    if (proposalsError) {
+      throw new Error(`Failed to delete proposals: ${proposalsError.message}`)
+    }
     
     console.log('[CLEAR_DATABASE] Deleting listings...')
-    await safeSupabaseQuery('listings', 'delete', null, {})
+    const { error: listingsError } = await supabaseClient
+      .from('listings')
+      .delete()
+      .neq('id', 0) // Delete all records (id is never 0)
+    
+    if (listingsError) {
+      throw new Error(`Failed to delete listings: ${listingsError.message}`)
+    }
 
     // Verify deletion
     const finalDeliverables = await safeSupabaseQuery('deliverables', 'select', null, {})
