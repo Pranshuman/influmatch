@@ -1003,7 +1003,9 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
   }
 })
 
-// ---- Messages Routes ----
+You have already submitted a proposal for this campaign.
+
+Edit your proposal// ---- Messages Routes ----
 // POST send message
 app.post('/api/messages', authenticateToken, async (req, res) => {
   try {
@@ -2047,6 +2049,9 @@ app.get('/api/deliverables/my-deliverables', authenticateToken, async (req, res)
       }
     }
 
+    // Sort deliverables by creation date (most recent first)
+    deliverables.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
     res.json({ deliverables })
   } catch (error) {
     console.error('[GET_MY_DELIVERABLES] Error:', error)
@@ -2090,6 +2095,9 @@ app.get('/api/deliverables/brand-deliverables', authenticateToken, async (req, r
         }
       }
     }
+
+    // Sort deliverables by creation date (most recent first)
+    deliverables.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     res.json({ deliverables })
   } catch (error) {
