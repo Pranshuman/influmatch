@@ -358,12 +358,21 @@ export default function CampaignManagementPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await marketplaceAPI.getListings(currentPage, 9)
-      // Filter to only show campaigns created by the current brand
+      
+      // Fetch all campaigns and filter client-side for now
+      // This is not ideal for large datasets, but works for the current use case
+      const response = await marketplaceAPI.getListings(1, 100) // Get a large number to get all campaigns
       const myCampaigns = response.listings.filter(listing => listing.brandId === user?.id)
-      setListings(myCampaigns)
-      setTotalPages(response.totalPages)
-      setTotal(response.total)
+      
+      // Implement client-side pagination
+      const itemsPerPage = 9
+      const startIndex = (currentPage - 1) * itemsPerPage
+      const endIndex = startIndex + itemsPerPage
+      const paginatedCampaigns = myCampaigns.slice(startIndex, endIndex)
+      
+      setListings(paginatedCampaigns)
+      setTotalPages(Math.ceil(myCampaigns.length / itemsPerPage))
+      setTotal(myCampaigns.length)
     } catch (err) {
       console.error('Error fetching campaigns:', err)
       setError('Failed to load your campaigns. Please try again.')
@@ -466,7 +475,7 @@ export default function CampaignManagementPage() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {listings.length > 0 && totalPages > 1 && (
           <div className="mt-12 flex justify-center">
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
               <div className="flex items-center space-x-4">
@@ -507,7 +516,7 @@ export default function CampaignManagementPage() {
               </div>
               
               <div className="mt-4 text-center text-sm text-gray-600">
-                Showing {((currentPage - 1) * 9) + 1} to {Math.min(currentPage * 9, total)} of {total} campaigns
+                Showing {((currentPage - 1) * 9) + 1} to {Math.min(currentPage * 9, listings.length)} of {listings.length} campaigns
               </div>
             </div>
           </div>
