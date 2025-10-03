@@ -9,7 +9,9 @@ import { marketplaceAPI, Proposal, Listing } from '@/lib/api'
 export default function CreateDeliverablePage() {
   const [campaigns, setCampaigns] = useState<Listing[]>([])
   const [selectedCampaign, setSelectedCampaign] = useState<Listing | null>(null)
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null)
   const [proposals, setProposals] = useState<Proposal[]>([])
+  const [existingDeliverables, setExistingDeliverables] = useState<any[]>([])
   const [deliverableCounts, setDeliverableCounts] = useState<Array<{
     campaignId: number
     totalAcceptedProposals: number
@@ -90,7 +92,9 @@ export default function CreateDeliverablePage() {
 
   const handleCampaignSelect = (campaign: Listing) => {
     setSelectedCampaign(campaign)
+    setSelectedProposal(null)
     setProposals([])
+    setExistingDeliverables([])
     setFormData({
       proposalId: '',
       title: '',
@@ -101,9 +105,62 @@ export default function CreateDeliverablePage() {
     fetchProposalsForCampaign(campaign.id)
   }
 
+  const fetchExistingDeliverables = async (proposalId: number) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Get existing deliverables for this proposal
+      const response = await marketplaceAPI.getDeliverablesByProposal(proposalId)
+      setExistingDeliverables(response.deliverables || [])
+    } catch (err: any) {
+      console.error('Error fetching deliverables:', err)
+      setError(err.message || 'Failed to load deliverables. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleProposalSelect = (proposal: Proposal) => {
+    setSelectedProposal(proposal)
+    setFormData({
+      proposalId: proposal.id.toString(),
+      title: '',
+      description: '',
+      type: 'image',
+      dueDate: ''
+    })
+    fetchExistingDeliverables(proposal.id)
+  }
+
   const getUnattendedCount = (campaignId: number) => {
     const count = deliverableCounts.find(c => c.campaignId === campaignId)
     return count?.unattendedProposals || 0
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'submitted':
+        return 'bg-blue-100 text-blue-800'
+      case 'under_review':
+        return 'bg-purple-100 text-purple-800'
+      case 'approved':
+        return 'bg-green-100 text-green-800'
+      case 'rejected':
+        return 'bg-red-100 text-red-800'
+      case 'revision_requested':
+        return 'bg-orange-100 text-orange-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getCurrentStep = () => {
+    if (!selectedCampaign) return 1
+    if (!selectedProposal) return 2
+    return 3
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -221,19 +278,50 @@ export default function CreateDeliverablePage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Create Deliverable</h1>
-              <p className="text-gray-600 mt-2">
-                {!selectedCampaign 
-                  ? "Select a campaign to create deliverables for accepted proposals"
-                  : `Creating deliverable for: ${selectedCampaign.title}`
-                }
-              </p>
+              <div className="flex items-center mt-2 space-x-4">
+                <p className="text-gray-600">
+                  {getCurrentStep() === 1 && "Step 1: Select a campaign"}
+                  {getCurrentStep() === 2 && `Step 2: Select a proposal from ${selectedCampaign?.title}`}
+                  {getCurrentStep() === 3 && `Step 3: Create deliverable for ${selectedProposal?.influencer?.name}`}
+                </p>
+                <div className="flex space-x-2">
+                  {[1, 2, 3].map((step) => (
+                    <div
+                      key={step}
+                      className={`w-3 h-3 rounded-full ${
+                        step <= getCurrentStep() ? 'bg-blue-600' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="flex space-x-3">
-              {selectedCampaign && (
+              {selectedProposal && (
+                <button
+                  onClick={() => {
+                    setSelectedProposal(null)
+                    setExistingDeliverables([])
+                    setFormData({
+                      proposalId: '',
+                      title: '',
+                      description: '',
+                      type: 'image',
+                      dueDate: ''
+                    })
+                  }}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Back to Proposals
+                </button>
+              )}
+              {selectedCampaign && !selectedProposal && (
                 <button
                   onClick={() => {
                     setSelectedCampaign(null)
+                    setSelectedProposal(null)
                     setProposals([])
+                    setExistingDeliverables([])
                     setFormData({
                       proposalId: '',
                       title: '',
@@ -263,8 +351,8 @@ export default function CreateDeliverablePage() {
           </div>
         )}
 
-        {!selectedCampaign ? (
-          /* Campaign Selection */
+        {getCurrentStep() === 1 && (
+          /* Step 1: Campaign Selection */
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Select a Campaign</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -278,7 +366,7 @@ export default function CreateDeliverablePage() {
                   >
                     {/* Notification Bubble */}
                     {unattendedCount > 0 && (
-                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg animate-pulse">
+                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg">
                         {unattendedCount > 99 ? '99+' : unattendedCount}
                       </div>
                     )}
@@ -301,46 +389,89 @@ export default function CreateDeliverablePage() {
               })}
             </div>
           </div>
-        ) : (
-          /* Proposal Selection and Form */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Accepted Proposals */}
-            <div className="lg:col-span-1">
+        )}
+
+        {getCurrentStep() === 2 && (
+          /* Step 2: Proposal Selection */
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Select a Proposal</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {loading ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading proposals...</p>
+                </div>
+              ) : proposals.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <div className="text-gray-400 text-6xl mb-4">📝</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Accepted Proposals</h3>
+                  <p className="text-gray-600">This campaign doesn't have any accepted proposals yet.</p>
+                </div>
+              ) : (
+                proposals.map((proposal) => (
+                  <div
+                    key={proposal.id}
+                    className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-200"
+                    onClick={() => handleProposalSelect(proposal)}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">{proposal.influencer?.name}</h3>
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                        ${proposal.proposedBudget?.toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{proposal.message}</p>
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <span>Proposed Budget</span>
+                      <span className="text-blue-600 font-medium">Click to view deliverables</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {getCurrentStep() === 3 && selectedProposal && (
+          /* Step 3: Deliverable Management */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Existing Deliverables */}
+            <div>
               <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Accepted Proposals</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">Existing Deliverables</h2>
                   <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                    {proposals.length} proposal{proposals.length !== 1 ? 's' : ''}
+                    {existingDeliverables.length} deliverable{existingDeliverables.length !== 1 ? 's' : ''}
                   </span>
                 </div>
                 
                 {loading ? (
                   <div className="text-center py-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-sm text-gray-600 mt-2">Loading proposals...</p>
+                    <p className="text-sm text-gray-600 mt-2">Loading deliverables...</p>
                   </div>
-                ) : proposals.length === 0 ? (
+                ) : existingDeliverables.length === 0 ? (
                   <div className="text-center py-8">
-                    <div className="text-gray-400 text-4xl mb-2">📝</div>
-                    <p className="text-gray-600 text-sm">No accepted proposals for this campaign</p>
+                    <div className="text-gray-400 text-4xl mb-2">📋</div>
+                    <p className="text-gray-600 text-sm">No deliverables created yet</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {proposals.map((proposal) => (
-                      <div
-                        key={proposal.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                          formData.proposalId === proposal.id.toString()
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => setFormData({ ...formData, proposalId: proposal.id.toString() })}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-gray-900 text-sm">{proposal.influencer?.name}</h4>
-                          <span className="text-xs text-gray-500">${proposal.proposedBudget}</span>
+                  <div className="space-y-4">
+                    {existingDeliverables.map((deliverable) => (
+                      <div key={deliverable.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-medium text-gray-900">{deliverable.title}</h4>
+                          <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(deliverable.status)}`}>
+                            {deliverable.status.replace('_', ' ')}
+                          </span>
                         </div>
-                        <p className="text-xs text-gray-600 line-clamp-2">{proposal.message}</p>
+                        {deliverable.description && (
+                          <p className="text-sm text-gray-600 mb-2">{deliverable.description}</p>
+                        )}
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Type: {deliverable.type}</span>
+                          <span>Created: {new Date(deliverable.createdAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -348,10 +479,10 @@ export default function CreateDeliverablePage() {
               </div>
             </div>
 
-            {/* Create Form */}
-            <div className="lg:col-span-2">
+            {/* Create New Deliverable */}
+            <div>
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Deliverable Details</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-6">Create New Deliverable</h2>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
@@ -419,7 +550,7 @@ export default function CreateDeliverablePage() {
                   <div className="flex items-center space-x-4">
                     <button
                       type="submit"
-                      disabled={creating || !formData.proposalId}
+                      disabled={creating || !formData.title.trim()}
                       className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {creating ? 'Creating...' : 'Create Deliverable'}
