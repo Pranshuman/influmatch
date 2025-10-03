@@ -165,7 +165,7 @@ export default function MyProposalsPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await marketplaceAPI.getMyProposals(currentPage, 12)
+      const response = await marketplaceAPI.getMyProposals(currentPage, 9)
       setProposals(response.proposals)
       setTotalPages(response.totalPages)
       setTotal(response.total)
@@ -375,7 +375,7 @@ export default function MyProposalsPage() {
               </div>
               
               <div className="mt-4 text-center text-sm text-gray-600">
-                Showing {((currentPage - 1) * 12) + 1} to {Math.min(currentPage * 12, total)} of {total} proposals
+                Showing {((currentPage - 1) * 9) + 1} to {Math.min(currentPage * 9, total)} of {total} proposals
               </div>
             </div>
           </div>

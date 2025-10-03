@@ -169,7 +169,7 @@ class MarketplaceAPI {
     return data
   }
 
-  async getListings(page: number = 1, limit: number = 12): Promise<{ listings: Listing[], total: number, page: number, totalPages: number }> {
+  async getListings(page: number = 1, limit: number = 9): Promise<{ listings: Listing[], total: number, page: number, totalPages: number }> {
     const response = await fetch(`${API_BASE}/api/listings?page=${page}&limit=${limit}`, {
       headers: this.getHeaders(),
     })
@@ -336,7 +336,7 @@ class MarketplaceAPI {
   }
 
   // Proposal Status Management Methods
-  async getMyProposals(page: number = 1, limit: number = 12): Promise<{ proposals: Proposal[], total: number, page: number, totalPages: number }> {
+  async getMyProposals(page: number = 1, limit: number = 9): Promise<{ proposals: Proposal[], total: number, page: number, totalPages: number }> {
     const response = await fetch(`${API_BASE}/api/proposals/my-proposals?page=${page}&limit=${limit}`, {
       headers: this.getHeaders(),
     })

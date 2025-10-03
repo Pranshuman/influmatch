@@ -314,7 +314,7 @@ function authenticateToken(req, res, next) {
 app.get('/api/listings', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 12
+    const limit = parseInt(req.query.limit) || 9
     const offset = (page - 1) * limit
     
     console.log('[LISTINGS] Fetching listings - page:', page, 'limit:', limit)
@@ -587,7 +587,7 @@ app.post('/api/listings/:id/proposals', authenticateToken, async (req, res) => {
 app.get('/api/proposals/my-proposals', authenticateToken, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 12
+    const limit = parseInt(req.query.limit) || 9
     const offset = (page - 1) * limit
     
     console.log('[MY_PROPOSALS] Fetching proposals for user:', req.user.userId, 'page:', page)

@@ -31,7 +31,7 @@ export default function Marketplace() {
     const fetchListings = async () => {
       try {
         setLoading(true)
-        const data = await marketplaceAPI.getListings(currentPage, 12)
+        const data = await marketplaceAPI.getListings(currentPage, 9)
         setListings(data.listings)
         setTotalPages(data.totalPages)
         setTotal(data.total)
@@ -209,7 +209,7 @@ export default function Marketplace() {
               </div>
               
               <div className="mt-4 text-center text-sm text-gray-600">
-                Showing {((currentPage - 1) * 12) + 1} to {Math.min(currentPage * 12, total)} of {total} campaigns
+                Showing {((currentPage - 1) * 9) + 1} to {Math.min(currentPage * 9, total)} of {total} campaigns
               </div>
             </div>
           </div>

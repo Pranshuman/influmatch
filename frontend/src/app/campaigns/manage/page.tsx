@@ -73,58 +73,58 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
   const canUpdateStatus = proposal.status === 'under_review' || proposal.status === 'accepted'
 
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 hover:shadow-lg transition-all duration-200">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-all duration-200">
       {/* Compact View */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4 flex-1">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+        <div className="flex items-center space-x-3 flex-1">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
             {(proposal.influencer?.name || 'U').charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="text-base font-semibold text-gray-900 truncate">
+            <h4 className="text-sm font-semibold text-gray-900 truncate">
               {proposal.influencer?.name || 'Unknown Influencer'}
             </h4>
-            <p className="text-sm text-gray-600 truncate">
+            <p className="text-xs text-gray-600 truncate">
               ${proposal.proposedBudget?.toLocaleString() || '0'} • {proposal.timeline || 'No timeline'}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           <StatusBadge status={proposal.status} />
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+            className="text-blue-600 hover:text-blue-700 text-xs font-medium transition-colors"
           >
-            {showDetails ? 'Hide Details' : 'View Details'}
+            {showDetails ? 'Hide' : 'View'}
           </button>
         </div>
       </div>
 
       {/* Expandable Details */}
       {showDetails && (
-        <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-sm text-gray-600 mb-2 font-medium">💬 Proposal Message:</p>
-            <p className="text-gray-900 leading-relaxed">{proposal.message}</p>
+        <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+          <div className="bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-600 mb-1 font-medium">💬 Proposal Message:</p>
+            <p className="text-gray-900 text-sm leading-relaxed">{proposal.message}</p>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-green-50 rounded-lg p-3">
-              <p className="text-sm text-gray-600 mb-1">💰 Proposed Budget:</p>
-              <p className="font-bold text-green-600 text-lg">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-green-50 rounded-lg p-2">
+              <p className="text-xs text-gray-600 mb-1">💰 Budget:</p>
+              <p className="font-bold text-green-600 text-sm">
                 ${proposal.proposedBudget?.toLocaleString() || '0'}
               </p>
             </div>
-            <div className="bg-blue-50 rounded-lg p-3">
-              <p className="text-sm text-gray-600 mb-1">⏰ Timeline:</p>
-              <p className="font-semibold text-blue-600">{proposal.timeline || 'Not specified'}</p>
+            <div className="bg-blue-50 rounded-lg p-2">
+              <p className="text-xs text-gray-600 mb-1">⏰ Timeline:</p>
+              <p className="font-semibold text-blue-600 text-sm">{proposal.timeline || 'Not specified'}</p>
             </div>
           </div>
 
-          <div className="bg-purple-50 rounded-lg p-3">
-            <p className="text-sm text-gray-600 mb-1">📅 Submitted:</p>
-            <p className="text-sm font-medium text-purple-600">
+          <div className="bg-purple-50 rounded-lg p-2">
+            <p className="text-xs text-gray-600 mb-1">📅 Submitted:</p>
+            <p className="text-xs font-medium text-purple-600">
               {new Date(proposal.createdAt).toLocaleDateString()}
             </p>
           </div>
@@ -133,21 +133,21 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
 
       {/* Action Buttons */}
       {canUpdateStatus && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="mt-2 pt-2 border-t border-gray-200">
           <div className="flex gap-2">
             {proposal.status === 'under_review' && (
               <>
                 <button
                   onClick={() => handleStatusUpdate('accepted')}
                   disabled={isUpdating}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-2 rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                  className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-2 py-1.5 rounded-md hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
                 >
                   {isUpdating ? 'Updating...' : '✅ Accept'}
                 </button>
                 <button
                   onClick={() => handleStatusUpdate('rejected')}
                   disabled={isUpdating}
-                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-2 rounded-lg hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-2 py-1.5 rounded-md hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
                 >
                   {isUpdating ? 'Updating...' : '❌ Reject'}
                 </button>
@@ -160,14 +160,14 @@ const ProposalManagementCard = ({ proposal, onStatusUpdate, router }: {
                     // Navigate to chat in the same tab using Next.js router
                     router.push(`/proposals/${proposal.id}/chat`)
                   }}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-2 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-2 py-1.5 rounded-md hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
                 >
                   💬 Chat
                 </button>
                 <button
                   onClick={() => handleStatusUpdate('withdrawn')}
                   disabled={isUpdating}
-                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-3 py-2 rounded-lg hover:from-gray-700 hover:to-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
+                  className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 text-white px-2 py-1.5 rounded-md hover:from-gray-700 hover:to-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
                 >
                   {isUpdating ? 'Updating...' : '↩️ Withdraw'}
                 </button>
@@ -237,39 +237,39 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
   const statusCounts = getStatusCounts()
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-200">
-      <div className="mb-8">
-        <div className="flex justify-between items-start mb-4">
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 hover:shadow-lg transition-all duration-200">
+      <div className="mb-4">
+        <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
-            <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
               {listing.title}
             </h3>
-            <p className="text-gray-600 mb-6 leading-relaxed">{listing.description}</p>
+            <p className="text-gray-600 mb-3 text-sm leading-relaxed line-clamp-2">{listing.description}</p>
           </div>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></span>
             {listing.status}
           </span>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-green-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-gray-600 mb-1">💰 Budget</p>
-            <p className="font-bold text-green-600 text-lg">${listing.budget?.toLocaleString() || '0'}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-green-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-gray-600 mb-1">💰 Budget</p>
+            <p className="font-bold text-green-600 text-sm">${listing.budget?.toLocaleString() || '0'}</p>
           </div>
-          <div className="bg-blue-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-gray-600 mb-1">📅 Deadline</p>
-            <p className="font-semibold text-blue-600">
+          <div className="bg-blue-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-gray-600 mb-1">📅 Deadline</p>
+            <p className="font-semibold text-blue-600 text-sm">
               {listing.deadline ? new Date(listing.deadline).toLocaleDateString() : 'Not set'}
             </p>
           </div>
-          <div className="bg-purple-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-gray-600 mb-1">📝 Total Proposals</p>
-            <p className="font-semibold text-purple-600 text-lg">{proposals.length}</p>
+          <div className="bg-purple-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-gray-600 mb-1">📝 Total</p>
+            <p className="font-semibold text-purple-600 text-sm">{proposals.length}</p>
           </div>
-          <div className="bg-orange-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-gray-600 mb-1">✅ Accepted</p>
-            <p className="font-semibold text-orange-600 text-lg">{statusCounts.accepted}</p>
+          <div className="bg-orange-50 rounded-lg p-3 text-center">
+            <p className="text-xs text-gray-600 mb-1">✅ Accepted</p>
+            <p className="font-semibold text-orange-600 text-sm">{statusCounts.accepted}</p>
           </div>
         </div>
       </div>
@@ -299,17 +299,17 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
           <p className="text-gray-600">No proposals yet</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <h4 className="text-lg font-semibold text-gray-900 flex items-center">
-              <span className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
-                <span className="text-blue-600 text-sm">📝</span>
+            <h4 className="text-sm font-semibold text-gray-900 flex items-center">
+              <span className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center mr-2">
+                <span className="text-blue-600 text-xs">📝</span>
               </span>
               Proposals ({proposals.length})
             </h4>
-            <div className="flex space-x-2 text-sm">
+            <div className="flex space-x-1 text-xs">
               <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                {statusCounts.under_review} Under Review
+                {statusCounts.under_review} Review
               </span>
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
                 {statusCounts.accepted} Accepted
@@ -319,7 +319,7 @@ const CampaignCard = ({ listing, onProposalUpdate, router }: {
               </span>
             </div>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {proposals.map((proposal) => (
               <ProposalManagementCard
                 key={proposal.id}
@@ -358,7 +358,7 @@ export default function CampaignManagementPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await marketplaceAPI.getListings(currentPage, 12)
+      const response = await marketplaceAPI.getListings(currentPage, 9)
       // Filter to only show campaigns created by the current brand
       const myCampaigns = response.listings.filter(listing => listing.brandId === user?.id)
       setListings(myCampaigns)
@@ -507,7 +507,7 @@ export default function CampaignManagementPage() {
               </div>
               
               <div className="mt-4 text-center text-sm text-gray-600">
-                Showing {((currentPage - 1) * 12) + 1} to {Math.min(currentPage * 12, total)} of {total} campaigns
+                Showing {((currentPage - 1) * 9) + 1} to {Math.min(currentPage * 9, total)} of {total} campaigns
               </div>
             </div>
           </div>
