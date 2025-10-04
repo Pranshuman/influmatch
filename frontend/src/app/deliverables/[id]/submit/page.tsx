@@ -54,7 +54,7 @@ export default function SubmitDeliverablePage() {
         return
       }
       
-      if (foundDeliverable.status !== 'pending') {
+      if (foundDeliverable.status !== 'pending' && foundDeliverable.status !== 'revision_requested') {
         setError('This deliverable has already been submitted or is not available for submission')
         return
       }
@@ -243,8 +243,12 @@ export default function SubmitDeliverablePage() {
                   
                   <div>
                     <h4 className="font-medium text-gray-900 mb-1">Status</h4>
-                    <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
-                      Pending Submission
+                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                      deliverable.status === 'pending' 
+                        ? 'bg-gray-100 text-gray-800' 
+                        : 'bg-orange-100 text-orange-800'
+                    }`}>
+                      {deliverable.status === 'pending' ? 'Pending Submission' : 'Revision Requested'}
                     </span>
                   </div>
                 </div>
@@ -254,11 +258,21 @@ export default function SubmitDeliverablePage() {
             {/* Submission Form */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Submit Your Deliverable</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-6">
+                  {deliverable.status === 'pending' ? 'Submit Your Deliverable' : 'Resubmit Your Deliverable'}
+                </h2>
                 
                 {error && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-red-800">{error}</p>
+                  </div>
+                )}
+                
+                {/* Show review notes if this is a revision request */}
+                {deliverable.status === 'revision_requested' && deliverable.reviewNotes && (
+                  <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <h3 className="font-medium text-orange-900 mb-2">📝 Revision Request</h3>
+                    <p className="text-orange-800">{deliverable.reviewNotes}</p>
                   </div>
                 )}
                 
@@ -301,7 +315,10 @@ export default function SubmitDeliverablePage() {
                       disabled={submitting}
                       className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {submitting ? 'Submitting...' : 'Submit Deliverable'}
+                      {submitting 
+                        ? (deliverable.status === 'pending' ? 'Submitting...' : 'Resubmitting...') 
+                        : (deliverable.status === 'pending' ? 'Submit Deliverable' : 'Resubmit Deliverable')
+                      }
                     </button>
                     
                     <Link

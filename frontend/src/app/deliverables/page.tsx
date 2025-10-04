@@ -294,6 +294,15 @@ export default function DeliverablesPage() {
                         </Link>
                       )}
                       
+                      {user?.userType === 'influencer' && deliverable.status === 'revision_requested' && (
+                        <Link
+                          href={`/deliverables/${deliverable.id}/submit`}
+                          className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-700 transition-colors text-center"
+                        >
+                          🔄 Resubmit
+                        </Link>
+                      )}
+                      
                       {user?.userType === 'brand' && (deliverable.status === 'submitted' || deliverable.status === 'under_review') && (
                         <Link
                           href={`/deliverables/${deliverable.id}/review`}

@@ -12,6 +12,7 @@ export default function ReviewDeliverablePage() {
   const [reviewing, setReviewing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [reviewAction, setReviewAction] = useState<'approved' | 'rejected' | 'revision_requested' | null>(null)
   const [authChecked, setAuthChecked] = useState(false)
   
   const [formData, setFormData] = useState({
@@ -110,6 +111,7 @@ export default function ReviewDeliverablePage() {
         reviewNotes: formData.reviewNotes.trim() || undefined
       })
       
+      setReviewAction(formData.status)
       setSuccess(true)
       setTimeout(() => {
         router.push('/deliverables')
@@ -173,12 +175,47 @@ export default function ReviewDeliverablePage() {
   }
 
   if (success) {
+    const getSuccessMessage = () => {
+      switch (reviewAction) {
+        case 'approved':
+          return {
+            icon: '✅',
+            title: 'Deliverable Approved!',
+            message: 'The deliverable has been approved successfully.',
+            color: 'text-green-600'
+          }
+        case 'rejected':
+          return {
+            icon: '❌',
+            title: 'Deliverable Rejected',
+            message: 'The deliverable has been rejected.',
+            color: 'text-red-600'
+          }
+        case 'revision_requested':
+          return {
+            icon: '🔄',
+            title: 'Revision Requested',
+            message: 'The deliverable has been sent back for revision.',
+            color: 'text-orange-600'
+          }
+        default:
+          return {
+            icon: '✅',
+            title: 'Review Submitted!',
+            message: 'Your review has been submitted.',
+            color: 'text-green-600'
+          }
+      }
+    }
+
+    const successInfo = getSuccessMessage()
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-green-600 text-6xl mb-4">✅</div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Deliverable Reviewed Successfully!</h2>
-          <p className="text-gray-600 mb-4">Your review has been submitted.</p>
+          <div className={`${successInfo.color} text-6xl mb-4`}>{successInfo.icon}</div>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">{successInfo.title}</h2>
+          <p className="text-gray-600 mb-4">{successInfo.message}</p>
           <p className="text-sm text-gray-500">Redirecting to deliverables page...</p>
         </div>
       </div>
