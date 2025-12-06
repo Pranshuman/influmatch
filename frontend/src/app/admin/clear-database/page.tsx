@@ -1,23 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
 
 export default function ClearDatabasePage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState(false)
+  const [mounted, setMounted] = useState(false)
   
   const { user, isAuthenticated } = useAuth()
   const router = useRouter()
 
-  if (!isAuthenticated) {
-    router.push('/auth/login')
+  // Only run client-side checks after component mounts
+  useEffect(() => {
+    setMounted(true)
+    if (!isAuthenticated) {
+      router.push('/auth/login')
+    }
+  }, [isAuthenticated, router])
+
+  // Don't render until mounted (prevents SSR issues)
+  if (!mounted || !isAuthenticated) {
     return null
   }
 
@@ -31,6 +37,11 @@ export default function ClearDatabasePage() {
       setLoading(true)
       setError(null)
       setResult(null)
+
+      // Only access localStorage on client side
+      if (typeof window === 'undefined') {
+        throw new Error('This action can only be performed in the browser')
+      }
 
       const token = localStorage.getItem('token')
       if (!token) {
